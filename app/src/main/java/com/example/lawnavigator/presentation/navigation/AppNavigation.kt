@@ -14,6 +14,7 @@ import androidx.navigation.navArgument
 import com.example.lawnavigator.presentation.home.HomeScreen
 import com.example.lawnavigator.presentation.lecture.LectureScreen
 import com.example.lawnavigator.presentation.login.LoginScreen
+import com.example.lawnavigator.presentation.profile.ProfileScreen
 import com.example.lawnavigator.presentation.topics.TopicsScreen
 
 @Composable
@@ -41,11 +42,13 @@ fun AppNavigation(
             )
         }
 
-        // Home
         composable(Screen.Home.route) {
             HomeScreen(
                 onNavigateToTopics = { disciplineId ->
                     navController.navigate(Screen.Topics.createRoute(disciplineId))
+                },
+                onNavigateToProfile = { // <--- Реализуем переход
+                    navController.navigate(Screen.Profile.route)
                 }
             )
         }
@@ -53,14 +56,30 @@ fun AppNavigation(
         // Topics
         composable(
             route = Screen.Topics.route,
-            arguments = listOf(navArgument("disciplineId") { type = NavType.IntType })
+            arguments = listOf(
+                navArgument("disciplineId") { type = NavType.IntType }
+            )
         ) {
             TopicsScreen(
-                onNavigateBack = { navController.popBackStack() },
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
                 onNavigateToLecture = { topicId ->
-                    // Временная заглушка, пока нет экрана Лекции, или переход, если уже сделал
                     navController.navigate(Screen.Lecture.createRoute(topicId))
+                },
+                onNavigateToTest = { topicId ->
+                    navController.navigate(Screen.Test.createRoute(topicId))
                 }
+            )
+        }
+
+        // Test
+        composable(
+            route = Screen.Test.route,
+            arguments = listOf(navArgument("topicId") { type = NavType.IntType })
+        ) {
+            com.example.lawnavigator.presentation.test.TestScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 
@@ -71,6 +90,17 @@ fun AppNavigation(
         ) {
             LectureScreen(
                 onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.Profile.route) {
+            ProfileScreen(
+                onNavigateBack = { navController.popBackStack() }, // <--- Просто возвращаемся назад
+                onNavigateToLogin = {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
             )
         }
     }

@@ -4,6 +4,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -16,11 +18,13 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.flow.collectLatest
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
-    onNavigateToTopics: (Int) -> Unit
+    onNavigateToTopics: (Int) -> Unit,
+    onNavigateToProfile: () -> Unit // <--- Добавляем новый колбэк
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -36,7 +40,12 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Дисциплины") }
+                title = { Text("Дисциплины") },
+                actions = { // <--- Добавляем кнопку справа
+                    IconButton(onClick = onNavigateToProfile) {
+                        Icon(Icons.Default.Person, contentDescription = "Профиль")
+                    }
+                }
             )
         }
     ) { paddingValues ->

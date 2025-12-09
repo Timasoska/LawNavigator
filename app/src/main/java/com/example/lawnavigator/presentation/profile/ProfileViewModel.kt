@@ -1,0 +1,59 @@
+package com.example.lawnavigator.presentation.profile
+
+
+import androidx.lifecycle.viewModelScope
+import com.example.lawnavigator.core.mvi.BaseViewModel
+import com.example.lawnavigator.domain.usecase.LogoutUseCase
+import com.example.lawnavigator.domain.usecase.profile.GetProfileDataUseCase
+import com.example.lawnavigator.presentation.profile.ProfileContract
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+/**
+ * ViewModel профиля. Загружает аналитику при старте.
+ */
+@HiltViewModel
+class ProfileViewModel @Inject constructor(
+    private val getProfileDataUseCase: GetProfileDataUseCase,
+    private val logoutUseCase: LogoutUseCase
+) : BaseViewModel<ProfileContract.State, ProfileContract.Event, ProfileContract.Effect>() {
+
+    override fun createInitialState() = ProfileContract.State()
+
+    init {
+        loadData()
+    }
+
+    override fun handleEvent(event: ProfileContract.Event) {
+        when (event) {
+            is ProfileContract.Event.OnLogoutClicked -> logout()
+            is ProfileContract.Event.OnBackClicked -> setEffect { ProfileContract.Effect.NavigateBack } // <--- Добавили
+            is ProfileContract.Event.OnRecommendationClicked -> {
+
+                // Переход к лекции по клику на рекомендацию
+                // Пока просто логируем или переходим, если есть роут
+            }
+        }
+    }
+
+    private fun loadData() {
+        setState { copy(isLoading = true) }
+        viewModelScope.launch {
+            getProfileDataUseCase()
+                .onSuccess { data ->
+                    setState { copy(isLoading = false, analytics = data) }
+                }
+                .onFailure {
+                    setState { copy(isLoading = false, error = "Не удалось загрузить данные") }
+                }
+        }
+    }
+
+    private fun logout() {
+        viewModelScope.launch {
+            logoutUseCase()
+            setEffect { ProfileContract.Effect.NavigateToLogin }
+        }
+    }
+}

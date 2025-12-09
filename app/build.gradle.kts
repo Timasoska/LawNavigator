@@ -2,10 +2,9 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    // Kapt для Hilt подключается по-старому (плагин kotlin-kapt встроен в kotlin)
-    id("kotlin-kapt")
     alias(libs.plugins.hiltAndroid)
     alias(libs.plugins.kotlinSerialization)
+    id("kotlin-kapt")
 }
 
 android {
@@ -32,11 +31,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
     buildFeatures {
         compose = true
@@ -44,8 +43,8 @@ android {
 }
 
 dependencies {
-    testImplementation("io.mockk:mockk:1.13.9") // Мощная библиотека для моков в Kotlin
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3") // Тестирование корутин
+
+    implementation(libs.androidx.material.icons.extended)
 
     // Navigation
     implementation(libs.androidx.navigation.compose)
@@ -91,9 +90,9 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
 }
 
-// Разрешаем ссылаться на сгенерированные Hilt классы
 kapt {
     correctErrorTypes = true
 }

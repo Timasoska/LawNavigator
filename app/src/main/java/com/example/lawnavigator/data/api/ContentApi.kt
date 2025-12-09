@@ -1,6 +1,7 @@
 package com.example.lawnavigator.data.api
 
 import com.example.lawnavigator.data.dto.DisciplineDto
+import com.example.lawnavigator.data.dto.ProgressDto
 import com.example.lawnavigator.data.dto.SubmitAnswerRequest
 import com.example.lawnavigator.data.dto.TestDto
 import com.example.lawnavigator.data.dto.TestResultDto
@@ -60,5 +61,17 @@ interface ContentApi {
         @Path("id") testId: Int,
         @Body answers: List<SubmitAnswerRequest>
     ): TestResultDto
+
+    /**
+     * Получает общую статистику успеваемости.
+     */
+    @GET("api/analytics/progress")
+    suspend fun getProgress(@Header("Authorization") token: String): ProgressDto
+
+    /**
+     * Получает список тем, рекомендованных к повторению (Smart Learning).
+     */
+    @GET("api/analytics/recommendations")
+    suspend fun getRecommendations(@Header("Authorization") token: String): List<TopicDto>
 
 }
