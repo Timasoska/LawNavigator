@@ -1,9 +1,12 @@
 package com.example.lawnavigator.di
 
 import com.example.lawnavigator.data.api.AuthApi
+import com.example.lawnavigator.data.api.ContentApi
 import com.example.lawnavigator.data.local.TokenManager
 import com.example.lawnavigator.data.repository.AuthRepositoryImpl
+import com.example.lawnavigator.data.repository.ContentRepositoryImpl
 import com.example.lawnavigator.domain.repository.AuthRepository
+import com.example.lawnavigator.domain.repository.ContentRepository
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import dagger.Module
 import dagger.Provides
@@ -22,6 +25,21 @@ object AppModule {
 
     // 10.0.2.2 — это адрес хоста (твоего ПК) для Эмулятора Android
     private const val BASE_URL = "http://10.0.2.2:8095/"
+
+    @Provides
+    @Singleton
+    fun provideContentRepository(
+        api: ContentApi,
+        tokenManager: TokenManager
+    ): ContentRepository {
+        return ContentRepositoryImpl(api, tokenManager)
+    }
+
+    @Provides
+    @Singleton
+    fun provideContentApi(retrofit: Retrofit): ContentApi {
+        return retrofit.create(ContentApi::class.java)
+    }
 
     @Provides
     @Singleton
