@@ -34,4 +34,24 @@ class LoginUseCaseTest {
         // Проверяем, что метод репозитория действительно был вызван
         coVerify { repository.login(email, password) }
     }
+
+    @Test
+    fun `invoke should return failure when repository returns error`() = runBlocking {
+        // GIVEN
+        val email = "test@test.com"
+        val password = "wrong_password"
+        val error = RuntimeException("Network Error")
+
+        // Настраиваем мок: имитируем ошибку
+        coEvery { repository.login(email, password) } returns Result.failure(error)
+
+        // WHEN
+        val result = loginUseCase(email, password)
+
+        // THEN
+        assertTrue(result.isFailure)
+        // Можно проверить, что вернулась именно наша ошибка
+        // assertEquals(error, result.exceptionOrNull())
+    }
+
 }
