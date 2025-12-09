@@ -8,6 +8,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.lawnavigator.presentation.home.HomeScreen
 import com.example.lawnavigator.presentation.login.LoginScreen
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+import com.example.lawnavigator.presentation.topics.TopicsScreen
 
 @Composable
 fun AppNavigation(
@@ -38,7 +41,22 @@ fun AppNavigation(
                     Log.d("Navigation", "Переход к темам дисциплины ID: $disciplineId")
 
                     // В будущем тут будет:
-                    // navController.navigate(Screen.Topics.createRoute(disciplineId))
+                    navController.navigate(Screen.Topics.createRoute(disciplineId))
+                }
+            )
+        }
+
+        // Topics (Новый экран)
+        composable(
+            route = Screen.Topics.route,
+            arguments = listOf(
+                navArgument("disciplineId") { type = NavType.IntType }
+            )
+        ) {
+            TopicsScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToLecture = { topicId ->
+                    println("Переход к лекции: $topicId") // Заглушка
                 }
             )
         }

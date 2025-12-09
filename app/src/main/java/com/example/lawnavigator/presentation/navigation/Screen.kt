@@ -7,6 +7,8 @@ sealed class Screen(val route: String) {
     // Главный экран (список дисциплин)
     data object Home : Screen("home")
 
-    // В будущем добавим:
-    // data object Topics : Screen("topics/{disciplineId}")
+    // Маршрут с параметром
+    data object Topics : Screen("topics/{disciplineId}") {
+        fun createRoute(disciplineId: Int) = "topics/$disciplineId"
+    }
 }
