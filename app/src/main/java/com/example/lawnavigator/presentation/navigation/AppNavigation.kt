@@ -1,15 +1,19 @@
 package com.example.lawnavigator.presentation.navigation
 
 import android.util.Log
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.lawnavigator.presentation.home.HomeScreen
-import com.example.lawnavigator.presentation.login.LoginScreen
-import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import com.example.lawnavigator.presentation.home.HomeScreen
+import com.example.lawnavigator.presentation.lecture.LectureScreen
+import com.example.lawnavigator.presentation.login.LoginScreen
 import com.example.lawnavigator.presentation.topics.TopicsScreen
 
 @Composable
@@ -19,13 +23,17 @@ fun AppNavigation(
 ) {
     NavHost(
         navController = navController,
-        startDestination = startDestination
+        startDestination = startDestination,
+        // Анимация по умолчанию для всех экранов:
+        enterTransition = { slideInHorizontally(initialOffsetX = { 1000 }, animationSpec = tween(300)) },
+        exitTransition = { slideOutHorizontally(targetOffsetX = { -1000 }, animationSpec = tween(300)) },
+        popEnterTransition = { slideInHorizontally(initialOffsetX = { -1000 }, animationSpec = tween(300)) },
+        popExitTransition = { slideOutHorizontally(targetOffsetX = { 1000 }, animationSpec = tween(300)) }
     ) {
-        // --- 1. ЭКРАН ВХОДА ---
+        // Login (без анимации при старте)
         composable(Screen.Login.route) {
             LoginScreen(
                 onNavigateToHome = {
-                    // Переходим на Home и "забываем" экран Login (удаляем из стека)
                     navController.navigate(Screen.Home.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
@@ -33,31 +41,36 @@ fun AppNavigation(
             )
         }
 
-        // --- 2. ГЛАВНЫЙ ЭКРАН (Список дисциплин) ---
+        // Home
         composable(Screen.Home.route) {
             HomeScreen(
                 onNavigateToTopics = { disciplineId ->
-                    // Пока просто пишем в лог, так как экрана тем еще нет
-                    Log.d("Navigation", "Переход к темам дисциплины ID: $disciplineId")
-
-                    // В будущем тут будет:
                     navController.navigate(Screen.Topics.createRoute(disciplineId))
                 }
             )
         }
 
-        // Topics (Новый экран)
+        // Topics
         composable(
             route = Screen.Topics.route,
-            arguments = listOf(
-                navArgument("disciplineId") { type = NavType.IntType }
-            )
+            arguments = listOf(navArgument("disciplineId") { type = NavType.IntType })
         ) {
             TopicsScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToLecture = { topicId ->
-                    println("Переход к лекции: $topicId") // Заглушка
+                    // Временная заглушка, пока нет экрана Лекции, или переход, если уже сделал
+                    navController.navigate(Screen.Lecture.createRoute(topicId))
                 }
+            )
+        }
+
+        // Lecture
+        composable(
+            route = Screen.Lecture.route,
+            arguments = listOf(navArgument("lectureId") { type = NavType.IntType })
+        ) {
+            LectureScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }

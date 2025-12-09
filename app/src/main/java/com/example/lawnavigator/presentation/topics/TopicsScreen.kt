@@ -17,6 +17,14 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.flow.collectLatest
 
+/**
+ * Экран отображения списка тем по выбранной дисциплине.
+ *
+ * @param viewModel ViewModel, управляющая состоянием экрана.
+ * @param onNavigateBack Колбэк для возврата на предыдущий экран.
+ * @param onNavigateToLecture Колбэк для перехода к чтению лекции.
+ */
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopicsScreen(

@@ -10,6 +10,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
+/**
+ * Экран отображения списка тем по выбранной дисциплине.
+ *
+ * @param viewModel ViewModel, управляющая состоянием экрана.
+ * @param onNavigateBack Колбэк для возврата на предыдущий экран.
+ * @param onNavigateToLecture Колбэк для перехода к чтению лекции.
+ */
+
 abstract class BaseViewModel<State : ViewState, Intent : ViewIntent, Effect : ViewSideEffect> : ViewModel() {
 
     abstract fun createInitialState(): State
