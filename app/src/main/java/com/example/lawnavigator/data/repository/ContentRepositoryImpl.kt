@@ -100,7 +100,11 @@ class ContentRepositoryImpl @Inject constructor(
                 id = dto.id,
                 title = dto.title,
                 questions = dto.questions.map { q ->
-                    Question(q.id, q.text, q.answers.map { a -> Answer(a.id, a.text) })
+                    Question(
+                        q.id,
+                        q.text,
+                        difficulty = q.difficulty, // <--- Пробрасываем значение
+                        q.answers.map { a -> Answer(a.id, a.text) })
                 }
             )
             Result.success(domainTest)

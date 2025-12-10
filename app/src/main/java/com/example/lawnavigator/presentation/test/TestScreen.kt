@@ -1,5 +1,6 @@
 package com.example.lawnavigator.presentation.test
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.lawnavigator.domain.model.Question
 import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,8 +58,7 @@ fun TestScreen(
                         }
                         items(test.questions) { question ->
                             QuestionItem(
-                                questionText = question.text,
-                                answers = question.answers,
+                                question = question, // <--- Передаем объект целиком
                                 selectedAnswerId = state.selectedAnswers[question.id],
                                 onSelect = { answerId -> viewModel.setEvent(TestContract.Event.OnAnswerSelected(question.id, answerId)) }
                             )
@@ -81,19 +82,27 @@ fun TestScreen(
 
 @Composable
 fun QuestionItem(
-    questionText: String,
-    answers: List<com.example.lawnavigator.domain.model.Answer>,
+    question: Question, // <--- Только один параметр с данными
     selectedAnswerId: Int?,
     onSelect: (Int) -> Unit
 ) {
     Card(elevation = CardDefaults.cardElevation(2.dp)) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = questionText, style = MaterialTheme.typography.titleMedium)
+            // Показываем сложность
+            DifficultyBadge(level = question.difficulty)
+
+            // Текст вопроса
+            Text(text = question.text, style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
-            answers.forEach { answer ->
+
+            // Ответы берем из самого вопроса
+            question.answers.forEach { answer ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     RadioButton(selected = (answer.id == selectedAnswerId), onClick = { onSelect(answer.id) })
-                    Text(text = answer.text, modifier = Modifier.padding(start = 8.dp))
+                    Text(
+                        text = answer.text,
+                        modifier = Modifier.padding(start = 8.dp).clickable { onSelect(answer.id) }
+                    )
                 }
             }
         }
@@ -111,5 +120,28 @@ fun ResultView(score: Int, message: String, onBack: () -> Unit) {
         Text(text = message, style = MaterialTheme.typography.bodyLarge)
         Spacer(modifier = Modifier.height(32.dp))
         Button(onClick = onBack) { Text("Вернуться") }
+    }
+}
+
+@Composable
+fun DifficultyBadge(level: Int) {
+    val (color, text) = when (level) {
+        1 -> Color(0xFF4CAF50) to "Легкий"   // Зеленый
+        2 -> Color(0xFFFFC107) to "Средний"  // Желтый
+        3 -> Color(0xFFF44336) to "Сложный"  // Красный
+        else -> Color.Gray to "Неизвестно"
+    }
+
+    Surface(
+        color = color.copy(alpha = 0.2f),
+        shape = MaterialTheme.shapes.small,
+        modifier = Modifier.padding(bottom = 8.dp)
+    ) {
+        Text(
+            text = text,
+            color = color,
+            style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+        )
     }
 }

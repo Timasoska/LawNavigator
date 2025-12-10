@@ -9,6 +9,7 @@ data class TestContent(
 data class Question(
     val id: Int,
     val text: String,
+    val difficulty: Int, // <--- Добавили
     val answers: List<Answer>
 )
 
