@@ -24,7 +24,7 @@ import javax.inject.Singleton
 object AppModule {
 
     // 10.0.2.2 — это адрес хоста (твоего ПК) для Эмулятора Android
-    private const val BASE_URL = "http://10.0.2.2:8095/"
+    private const val BASE_URL = "http://192.168.1.108:5555/"
 
     @Provides
     @Singleton
