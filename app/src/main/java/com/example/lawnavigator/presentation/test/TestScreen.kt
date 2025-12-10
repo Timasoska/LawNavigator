@@ -1,16 +1,20 @@
 package com.example.lawnavigator.presentation.test
 
+import androidx.compose.animation.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.lawnavigator.domain.model.Question
@@ -33,7 +37,13 @@ fun TestScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Тестирование") },
+                title = {
+                    Text(
+                        if (state.resultScore != null) "Результат"
+                        // Показываем "Вопрос 1 из 5"
+                        else "Вопрос ${state.currentQuestionIndex + 1} из ${state.test?.questions?.size ?: 0}"
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = { viewModel.setEvent(TestContract.Event.OnBackClicked) }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -45,32 +55,62 @@ fun TestScreen(
         Box(modifier = Modifier.padding(padding).fillMaxSize()) {
             if (state.isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            } else if (state.resultScore != null) {
+            }
+            else if (state.resultScore != null) {
                 // ЭКРАН РЕЗУЛЬТАТА
-                ResultView(score = state.resultScore!!, message = state.resultMessage ?: "", onBack = { viewModel.setEvent(TestContract.Event.OnBackClicked) })
-            } else {
-                // ЭКРАН ВОПРОСОВ
+                ResultView(
+                    score = state.resultScore!!,
+                    message = state.resultMessage ?: "",
+                    onBack = { viewModel.setEvent(TestContract.Event.OnBackClicked) }
+                )
+            }
+            else {
+                // ЭКРАН ВОПРОСА С АНИМАЦИЕЙ
                 state.test?.let { test ->
-                    LazyColumn(contentPadding = PaddingValues(16.dp)) {
-                        item {
-                            Text(test.title, style = MaterialTheme.typography.headlineSmall)
-                            Spacer(modifier = Modifier.height(16.dp))
-                        }
-                        items(test.questions) { question ->
-                            QuestionItem(
-                                question = question, // <--- Передаем объект целиком
-                                selectedAnswerId = state.selectedAnswers[question.id],
-                                onSelect = { answerId -> viewModel.setEvent(TestContract.Event.OnAnswerSelected(question.id, answerId)) }
+                    val currentQuestion = test.questions.getOrNull(state.currentQuestionIndex)
+
+                    if (currentQuestion != null) {
+                        Column(modifier = Modifier.padding(16.dp).fillMaxSize()) {
+
+                            // Прогресс бар
+                            LinearProgressIndicator(
+                                progress = { (state.currentQuestionIndex + 1) / test.questions.size.toFloat() },
+                                modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
                             )
+
                             Spacer(modifier = Modifier.height(24.dp))
-                        }
-                        item {
+
+                            // Анимированная смена вопроса
+                            AnimatedContent(
+                                targetState = currentQuestion,
+                                transitionSpec = {
+                                    // Новый выезжает справа, старый уезжает влево
+                                    slideInHorizontally { width -> width } + fadeIn() togetherWith
+                                            slideOutHorizontally { width -> -width } + fadeOut()
+                                },
+                                label = "QuestionAnimation"
+                            ) { question ->
+                                QuestionCard(
+                                    question = question,
+                                    selectedAnswerId = state.selectedAnswers[question.id],
+                                    onAnswerSelect = { id ->
+                                        viewModel.setEvent(TestContract.Event.OnAnswerSelected(question.id, id))
+                                    }
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.weight(1f))
+
+                            // Кнопка "Далее" или "Завершить"
+                            val isAnswerSelected = state.selectedAnswers.containsKey(currentQuestion.id)
+                            val isLastQuestion = state.currentQuestionIndex == test.questions.size - 1
+
                             Button(
-                                onClick = { viewModel.setEvent(TestContract.Event.OnSubmitClicked) },
-                                modifier = Modifier.fillMaxWidth(),
-                                enabled = state.selectedAnswers.size == test.questions.size
+                                onClick = { viewModel.setEvent(TestContract.Event.OnNextClicked) },
+                                modifier = Modifier.fillMaxWidth().height(56.dp),
+                                enabled = isAnswerSelected // Кнопка активна только если выбран ответ
                             ) {
-                                Text("Завершить тест")
+                                Text(if (isLastQuestion) "Завершить тест" else "Далее")
                             }
                         }
                     }
@@ -81,28 +121,42 @@ fun TestScreen(
 }
 
 @Composable
-fun QuestionItem(
-    question: Question, // <--- Только один параметр с данными
+fun QuestionCard(
+    question: Question,
     selectedAnswerId: Int?,
-    onSelect: (Int) -> Unit
+    onAnswerSelect: (Int) -> Unit
 ) {
-    Card(elevation = CardDefaults.cardElevation(2.dp)) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Показываем сложность
-            DifficultyBadge(level = question.difficulty)
+    Column {
+        // Наш красивый бейдж сложности
+        DifficultyBadge(level = question.difficulty)
 
-            // Текст вопроса
-            Text(text = question.text, style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(8.dp))
+        Text(text = question.text, style = MaterialTheme.typography.headlineSmall)
 
-            // Ответы берем из самого вопроса
-            question.answers.forEach { answer ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    RadioButton(selected = (answer.id == selectedAnswerId), onClick = { onSelect(answer.id) })
-                    Text(
-                        text = answer.text,
-                        modifier = Modifier.padding(start = 8.dp).clickable { onSelect(answer.id) }
+        Spacer(modifier = Modifier.height(24.dp))
+
+        question.answers.forEach { answer ->
+            val isSelected = answer.id == selectedAnswerId
+            val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+            val containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) else MaterialTheme.colorScheme.surface
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 6.dp)
+                    .border(if (isSelected) 2.dp else 1.dp, borderColor, RoundedCornerShape(12.dp))
+                    .clickable { onAnswerSelect(answer.id) },
+                colors = CardDefaults.cardColors(containerColor = containerColor)
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(
+                        selected = isSelected,
+                        onClick = null // Клик обрабатывается карточкой
                     )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = answer.text, style = MaterialTheme.typography.bodyLarge)
                 }
             }
         }
@@ -116,19 +170,28 @@ fun ResultView(score: Int, message: String, onBack: () -> Unit) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = "Ваш результат: $score%", style = MaterialTheme.typography.displayMedium, color = if (score >= 60) Color.Green else Color.Red)
+        Text(
+            text = "$score%",
+            style = MaterialTheme.typography.displayLarge,
+            fontWeight = FontWeight.Bold,
+            color = if (score >= 60) Color(0xFF4CAF50) else Color(0xFFF44336)
+        )
+        Text(text = "Ваш результат", style = MaterialTheme.typography.titleMedium)
+
+        Spacer(modifier = Modifier.height(16.dp))
         Text(text = message, style = MaterialTheme.typography.bodyLarge)
+
         Spacer(modifier = Modifier.height(32.dp))
-        Button(onClick = onBack) { Text("Вернуться") }
+        Button(onClick = onBack) { Text("Вернуться к темам") }
     }
 }
 
 @Composable
 fun DifficultyBadge(level: Int) {
     val (color, text) = when (level) {
-        1 -> Color(0xFF4CAF50) to "Легкий"   // Зеленый
-        2 -> Color(0xFFFFC107) to "Средний"  // Желтый
-        3 -> Color(0xFFF44336) to "Сложный"  // Красный
+        1 -> Color(0xFF4CAF50) to "Легкий"
+        2 -> Color(0xFFFFC107) to "Средний"
+        3 -> Color(0xFFF44336) to "Сложный"
         else -> Color.Gray to "Неизвестно"
     }
 

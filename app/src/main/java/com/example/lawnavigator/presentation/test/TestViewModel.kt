@@ -29,8 +29,22 @@ class TestViewModel @Inject constructor(
                 newMap[event.questionId] = event.answerId
                 setState { copy(selectedAnswers = newMap) }
             }
-            is TestContract.Event.OnSubmitClicked -> submitTest()
+            is TestContract.Event.OnNextClicked -> handleNextClick() // <--- Логика переключения
             is TestContract.Event.OnBackClicked -> setEffect { TestContract.Effect.NavigateBack }
+        }
+    }
+
+    // Новая функция обработки клика "Далее"
+    private fun handleNextClick() {
+        val test = currentState.test ?: return
+        val currentIndex = currentState.currentQuestionIndex
+
+        if (currentIndex < test.questions.lastIndex) {
+            // Если вопросы еще есть -> переходим к следующему
+            setState { copy(currentQuestionIndex = currentIndex + 1) }
+        } else {
+            // Если это последний вопрос -> отправляем на проверку
+            submitTest()
         }
     }
 
@@ -39,7 +53,7 @@ class TestViewModel @Inject constructor(
         viewModelScope.launch {
             testUseCase.loadTest(topicId)
                 .onSuccess { test -> setState { copy(isLoading = false, test = test) } }
-                .onFailure { setState { copy(isLoading = false) } } // Обработать ошибку
+                .onFailure { setState { copy(isLoading = false) } }
         }
     }
 
