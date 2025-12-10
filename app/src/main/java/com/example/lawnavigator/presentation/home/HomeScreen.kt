@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -24,7 +25,9 @@ import kotlinx.coroutines.flow.collectLatest
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     onNavigateToTopics: (Int) -> Unit,
-    onNavigateToProfile: () -> Unit // <--- Добавляем новый колбэк
+    onNavigateToProfile: () -> Unit, // <--- Добавляем новый колбэк
+    onNavigateToSearch: () -> Unit // <--- 1. ДОБАВЛЯЕМ ЭТОТ ПАРАМЕТР
+
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -41,7 +44,13 @@ fun HomeScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Дисциплины") },
-                actions = { // <--- Добавляем кнопку справа
+                actions = {
+                    // Кнопка ПОИСКА
+                    IconButton(onClick = onNavigateToSearch) { // <--- 2. ВЫЗЫВАЕМ КОЛБЭК ТУТ
+                        Icon(Icons.Default.Search, contentDescription = "Поиск")
+                    }
+
+                    // Кнопка ПРОФИЛЯ
                     IconButton(onClick = onNavigateToProfile) {
                         Icon(Icons.Default.Person, contentDescription = "Профиль")
                     }

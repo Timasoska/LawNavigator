@@ -27,6 +27,17 @@ class ContentRepositoryImpl @Inject constructor(
     private val tokenManager: TokenManager
 ) : ContentRepository {
 
+    override suspend fun searchLectures(query: String): Result<List<Lecture>> {
+        return try {
+            val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
+            val dtos = api.searchLectures("Bearer $token", query)
+            val lectures = dtos.map { Lecture(it.id, it.title, it.content, it.topicId) }
+            Result.success(lectures)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     override suspend fun getDisciplines(): Result<List<Discipline>> {
         return try {
             // 1. Достаем токен из DataStore (ждем первое значение)

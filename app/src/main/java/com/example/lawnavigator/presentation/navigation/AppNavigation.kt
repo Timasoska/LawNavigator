@@ -49,7 +49,11 @@ fun AppNavigation(
                 },
                 onNavigateToProfile = { // <--- Реализуем переход
                     navController.navigate(Screen.Profile.route)
+                },
+                onNavigateToSearch = {
+                    navController.navigate(Screen.Search.route)
                 }
+
             )
         }
 
@@ -103,5 +107,18 @@ fun AppNavigation(
                 }
             )
         }
+
+        composable(Screen.Search.route) {
+            com.example.lawnavigator.presentation.search.SearchScreen(
+                onNavigateBack = {
+                    navController.popBackStack() // Возвращаемся назад
+                },
+                onNavigateToLecture = { lectureId ->
+                    // Переходим к чтению найденной лекции
+                    navController.navigate(Screen.Lecture.createRoute(lectureId))
+                }
+            )
+        }
+
     }
 }

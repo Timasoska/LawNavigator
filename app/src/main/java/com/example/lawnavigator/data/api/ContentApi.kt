@@ -1,6 +1,7 @@
 package com.example.lawnavigator.data.api
 
 import com.example.lawnavigator.data.dto.DisciplineDto
+import com.example.lawnavigator.data.dto.LectureDto
 import com.example.lawnavigator.data.dto.ProgressDto
 import com.example.lawnavigator.data.dto.SubmitAnswerRequest
 import com.example.lawnavigator.data.dto.TestDto
@@ -12,8 +13,15 @@ import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface ContentApi {
+
+    @GET("api/search")
+    suspend fun searchLectures(
+        @Header("Authorization") token: String,
+        @Query("q") query: String
+    ): List<LectureDto>
 
     // Запрашиваем список дисциплин.
     // Токен будем передавать в заголовке Authorization
