@@ -1,5 +1,6 @@
 package com.example.lawnavigator.di
 
+import com.example.lawnavigator.BuildConfig
 import com.example.lawnavigator.data.api.AuthApi
 import com.example.lawnavigator.data.api.ContentApi
 import com.example.lawnavigator.data.local.TokenManager
@@ -23,8 +24,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
-    // 10.0.2.2 — это адрес хоста (твоего ПК) для Эмулятора Android
-    private const val BASE_URL = "http://192.168.1.108:5555/"
+
 
     @Provides
     @Singleton
@@ -65,11 +65,13 @@ object AppModule {
     fun provideRetrofit(okHttpClient: OkHttpClient, json: Json): Retrofit {
         val contentType = "application/json".toMediaType()
         return Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            // БЕРЕМ ИЗ КОНФИГА (он сам выберет нужный адрес)
+            .baseUrl(BuildConfig.BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(json.asConverterFactory(contentType))
             .build()
     }
+
 
     @Provides
     @Singleton

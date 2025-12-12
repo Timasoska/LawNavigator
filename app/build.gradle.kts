@@ -22,7 +22,17 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Твой локальный IP (для эмулятора и тестов дома)
+            // Обрати внимание на кавычки: "\"строка\""
+            buildConfigField("String", "BASE_URL", "\"http://192.168.1.108:5555/\"")
+        }
+
         release {
+            // Будущий реальный сервер (пока поставь заглушку или если купишь VPS - его IP)
+            // minifyEnabled true // (обычно включают для релиза)
+            buildConfigField("String", "BASE_URL", "\"http://45.130.xxx.xxx:5555/\"")
+
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -39,11 +49,11 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
 dependencies {
-
     implementation(libs.androidx.material.icons.extended)
 
     // Navigation
