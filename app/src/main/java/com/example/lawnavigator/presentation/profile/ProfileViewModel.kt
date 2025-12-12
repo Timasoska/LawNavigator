@@ -30,9 +30,7 @@ class ProfileViewModel @Inject constructor(
             is ProfileContract.Event.OnLogoutClicked -> logout()
             is ProfileContract.Event.OnBackClicked -> setEffect { ProfileContract.Effect.NavigateBack } // <--- Добавили
             is ProfileContract.Event.OnRecommendationClicked -> {
-
-                // Переход к лекции по клику на рекомендацию
-                // Пока просто логируем или переходим, если есть роут
+                setEffect { ProfileContract.Effect.NavigateToTopic(event.topicId) }
             }
         }
     }

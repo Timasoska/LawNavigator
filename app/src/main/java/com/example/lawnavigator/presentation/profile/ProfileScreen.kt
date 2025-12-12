@@ -1,6 +1,6 @@
 package com.example.lawnavigator.presentation.profile
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -18,20 +18,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.flow.collectLatest
 
-/**
- * Экран профиля пользователя со статистикой и настройками.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
     onNavigateToLogin: () -> Unit,
-    onNavigateBack: () -> Unit // <--- Новый колбэк
+    onNavigateBack: () -> Unit,
+    // 1. ДОБАВИЛИ НОВЫЙ КОЛБЭК
+    onNavigateToTopic: (Int) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -39,8 +37,9 @@ fun ProfileScreen(
         viewModel.effect.collectLatest { effect ->
             when (effect) {
                 is ProfileContract.Effect.NavigateToLogin -> onNavigateToLogin()
-                is ProfileContract.Effect.NavigateToTopic -> {} // TODO
-                is ProfileContract.Effect.NavigateBack -> onNavigateBack() // <--- Обработка
+                is ProfileContract.Effect.NavigateBack -> onNavigateBack()
+                // 2. ОБРАБАТЫВАЕМ ЭФФЕКТ ПЕРЕХОДА
+                is ProfileContract.Effect.NavigateToTopic -> onNavigateToTopic(effect.topicId)
                 else -> {}
             }
         }
@@ -50,7 +49,6 @@ fun ProfileScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Профиль") },
-                // Добавляем иконку стрелки назад слева
                 navigationIcon = {
                     IconButton(onClick = { viewModel.setEvent(ProfileContract.Event.OnBackClicked) }) {
                         Icon(
@@ -60,7 +58,6 @@ fun ProfileScreen(
                     }
                 },
                 actions = {
-                    // Кнопка выхода остается справа
                     IconButton(onClick = { viewModel.setEvent(ProfileContract.Event.OnLogoutClicked) }) {
                         Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Выход")
                     }
@@ -73,8 +70,6 @@ fun ProfileScreen(
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    // Карточка статистики
-                    // Карточка статистики
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
@@ -92,6 +87,17 @@ fun ProfileScreen(
                                 Column {
                                     Text("Пройдено тестов: ${state.analytics?.testsPassed ?: 0}")
                                     Text("Средний балл: ${state.analytics?.averageScore ?: 0.0}")
+
+                                    // --- НОВАЯ СТРОКА: МАТЕМАТИЧЕСКИЙ ПРОГНОЗ ---
+                                    state.analytics?.let { analytics ->
+                                        val prediction = (analytics.averageScore + analytics.trend).coerceIn(0.0, 100.0)
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text(
+                                            text = "Прогноз: ${String.format("%.1f", prediction)}",
+                                            style = MaterialTheme.typography.labelLarge,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
                                 }
 
                                 // Правая часть: Тренд (Стрелка)
@@ -104,7 +110,6 @@ fun ProfileScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Блок рекомендаций
                     Text("Рекомендуем повторить:", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(8.dp))
 
@@ -115,7 +120,13 @@ fun ProfileScreen(
                         LazyColumn {
                             items(recs) { topic ->
                                 Card(
-                                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+                                        // 3. ДОБАВИЛИ КЛИК ПО КАРТОЧКЕ
+                                        .clickable {
+                                            viewModel.setEvent(ProfileContract.Event.OnRecommendationClicked(topic.id))
+                                        },
                                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
                                 ) {
                                     Text(
@@ -133,21 +144,20 @@ fun ProfileScreen(
     }
 }
 
-
 @Composable
 fun TrendIndicator(trend: Double) {
     val isPositive = trend > 0
     val isNeutral = trend == 0.0
 
     val color = when {
-        isPositive -> Color(0xFF4CAF50) // Зеленый
+        isPositive -> Color(0xFF4CAF50)
         isNeutral -> Color.Gray
-        else -> Color(0xFFF44336)       // Красный
+        else -> Color(0xFFF44336)
     }
 
     val icon = when {
         isPositive -> Icons.Default.KeyboardArrowUp
-        isNeutral -> Icons.Default.Refresh // Или любой нейтральный значок
+        isNeutral -> Icons.Default.Refresh
         else -> Icons.Default.KeyboardArrowDown
     }
 
@@ -168,7 +178,7 @@ fun TrendIndicator(trend: Double) {
             text = text,
             style = MaterialTheme.typography.labelSmall,
             color = color,
-            fontWeight = FontWeight.Bold
+            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
         )
     }
 }

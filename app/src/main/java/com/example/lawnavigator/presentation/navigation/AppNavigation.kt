@@ -97,13 +97,24 @@ fun AppNavigation(
             )
         }
 
+        // --- 5. ПРОФИЛЬ ---
         composable(Screen.Profile.route) {
             ProfileScreen(
-                onNavigateBack = { navController.popBackStack() }, // <--- Просто возвращаемся назад
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
                 onNavigateToLogin = {
                     navController.navigate(Screen.Login.route) {
                         popUpTo(0) { inclusive = true }
                     }
+                },
+                // 4. РЕАЛИЗУЕМ ПЕРЕХОД ПО РЕКОМЕНДАЦИИ
+                onNavigateToTopic = { topicId ->
+                    // Здесь мы используем topicId.
+                    // Если у темы одна лекция, можно переходить сразу на Screen.Lecture.
+                    // Если много - лучше на Screen.Topics или сделать Screen.LecturesList.
+                    // Для простоты пока переходим на лекцию (предполагаем 1 к 1 или заглушку)
+                    navController.navigate(Screen.Lecture.createRoute(topicId))
                 }
             )
         }
