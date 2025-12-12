@@ -17,7 +17,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.flow.collectLatest
@@ -109,6 +111,28 @@ fun ProfileScreen(
                     }
 
                     Spacer(modifier = Modifier.height(24.dp))
+
+                    Text("Успеваемость по предметам:", style = MaterialTheme.typography.titleMedium)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    state.analytics?.disciplines?.forEach { disc ->
+                        Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(disc.name, style = MaterialTheme.typography.bodyMedium)
+                                Text("${disc.score.toInt()}%", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            // Прогресс-бар
+                            LinearProgressIndicator(
+                                progress = { (disc.score / 100).toFloat() },
+                                modifier = Modifier.fillMaxWidth().height(6.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(3.dp)),
+                                color = if (disc.score >= 60) Color(0xFF4CAF50) else Color(0xFFFFC107),
+                            )
+                        }
+                    }
 
                     Text("Рекомендуем повторить:", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(8.dp))

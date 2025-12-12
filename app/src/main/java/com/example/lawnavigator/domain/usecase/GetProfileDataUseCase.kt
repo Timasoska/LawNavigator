@@ -1,6 +1,7 @@
 package com.example.lawnavigator.domain.usecase.profile
 import com.example.lawnavigator.data.api.ContentApi
 import com.example.lawnavigator.data.local.TokenManager
+import com.example.lawnavigator.domain.model.DisciplineStat
 import com.example.lawnavigator.domain.model.Topic
 import com.example.lawnavigator.domain.model.UserAnalytics
 import kotlinx.coroutines.flow.first
@@ -27,10 +28,14 @@ class GetProfileDataUseCase @Inject constructor(
                 testsPassed = progressDto.testsPassed,
                 averageScore = progressDto.averageScore,
                 trend = progressDto.trend,
+                // Маппим дисциплины
+                disciplines = progressDto.disciplines.map {
+                    DisciplineStat(it.name, it.averageScore, it.trend)
+                },
                 recommendations = recsDto.map { Topic(it.id, it.name, it.disciplineId) }
             )
             Result.success(analytics)
-        } catch (e: Exception) {
+        } catch (e: Exception) { // <--- ВОТ ЭТОГО НЕ ХВАТАЛО
             Result.failure(e)
         }
     }

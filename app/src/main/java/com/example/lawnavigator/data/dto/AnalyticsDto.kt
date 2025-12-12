@@ -10,6 +10,14 @@ import kotlinx.serialization.Serializable
 data class ProgressDto(
     val testsPassed: Int,
     val averageScore: Double,
-    val trend: Double // <--- Добавили
+    val trend: Double, // <--- Добавили
+    val disciplines: List<DisciplineStatDto> = emptyList()
+)
 
+@Serializable
+data class DisciplineStatDto(
+    val id: Int,
+    val name: String,
+    val averageScore: Double,
+    val trend: Double
 )
