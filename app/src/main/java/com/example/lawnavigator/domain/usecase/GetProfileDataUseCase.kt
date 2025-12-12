@@ -26,6 +26,7 @@ class GetProfileDataUseCase @Inject constructor(
             val analytics = UserAnalytics(
                 testsPassed = progressDto.testsPassed,
                 averageScore = progressDto.averageScore,
+                trend = progressDto.trend,
                 recommendations = recsDto.map { Topic(it.id, it.name, it.disciplineId) }
             )
             Result.success(analytics)

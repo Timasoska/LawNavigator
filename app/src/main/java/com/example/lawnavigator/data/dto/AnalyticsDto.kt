@@ -9,5 +9,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ProgressDto(
     val testsPassed: Int,
-    val averageScore: Double
+    val averageScore: Double,
+    val trend: Double // <--- Добавили
+
 )

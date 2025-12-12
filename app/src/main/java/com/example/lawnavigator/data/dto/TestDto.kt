@@ -13,7 +13,7 @@ data class TestDto(
 data class QuestionDto(
     val id: Int,
     val text: String,
-    val difficulty: Int, // <--- Добавили
+    val difficulty: Int,
     val answers: List<AnswerDto>
 )
 
