@@ -7,14 +7,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,7 +16,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.lawnavigator.components.ScoreChart
+import com.example.lawnavigator.presentation.components.ScoreChart
+import com.example.lawnavigator.presentation.components.TrendIndicator
+import com.example.lawnavigator.presentation.utils.calculateTrendLocal
 import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,17 +27,28 @@ fun ProfileScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
     onNavigateToLogin: () -> Unit,
     onNavigateBack: () -> Unit,
-    // 1. ДОБАВИЛИ НОВЫЙ КОЛБЭК
     onNavigateToTopic: (Int) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
+
+    // --- СОСТОЯНИЕ СИМУЛЯТОРА ---
+    var isSimulationMode by remember { mutableStateOf(false) }
+    var simulatedScore by remember { mutableFloatStateOf(80f) }
+
+    // Подготовка данных
+    val realHistory = state.analytics?.history ?: emptyList()
+    val displayHistory = remember(realHistory, isSimulationMode, simulatedScore) {
+        if (isSimulationMode) realHistory + simulatedScore.toInt() else realHistory
+    }
+    val displayAvg = if (displayHistory.isNotEmpty()) displayHistory.average() else 0.0
+    val displayTrend = calculateTrendLocal(displayHistory)
+    val displayPassedTests = (state.analytics?.testsPassed ?: 0) + (if (isSimulationMode) 1 else 0)
 
     LaunchedEffect(true) {
         viewModel.effect.collectLatest { effect ->
             when (effect) {
                 is ProfileContract.Effect.NavigateToLogin -> onNavigateToLogin()
                 is ProfileContract.Effect.NavigateBack -> onNavigateBack()
-                // 2. ОБРАБАТЫВАЕМ ЭФФЕКТ ПЕРЕХОДА
                 is ProfileContract.Effect.NavigateToTopic -> onNavigateToTopic(effect.topicId)
                 else -> {}
             }
@@ -54,10 +61,7 @@ fun ProfileScreen(
                 title = { Text("Профиль") },
                 navigationIcon = {
                     IconButton(onClick = { viewModel.setEvent(ProfileContract.Event.OnBackClicked) }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Назад"
-                        )
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
                     }
                 },
                 actions = {
@@ -72,70 +76,99 @@ fun ProfileScreen(
             if (state.isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text("Ваш прогресс", style = MaterialTheme.typography.titleLarge)
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp)
+                ) {
+                    // 1. КАРТОЧКА СТАТИСТИКИ
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isSimulationMode)
+                                    MaterialTheme.colorScheme.tertiaryContainer
+                                else
+                                    MaterialTheme.colorScheme.primaryContainer
+                            )
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        if (isSimulationMode) "Симулятор оценок" else "Ваш прогресс",
+                                        style = MaterialTheme.typography.titleLarge
+                                    )
+                                    Switch(
+                                        checked = isSimulationMode,
+                                        onCheckedChange = { isSimulationMode = it }
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(16.dp))
 
-                            Spacer(modifier = Modifier.height(16.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column {
+                                        Text("Пройдено тестов: $displayPassedTests")
+                                        Text("Средний балл: ${String.format("%.1f", displayAvg)}")
 
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                // Левая часть: Цифры
-                                Column {
-                                    Text("Пройдено тестов: ${state.analytics?.testsPassed ?: 0}")
-                                    Text("Средний балл: ${state.analytics?.averageScore ?: 0.0}")
-
-                                    // --- НОВАЯ СТРОКА: МАТЕМАТИЧЕСКИЙ ПРОГНОЗ ---
-                                    state.analytics?.let { analytics ->
-                                        val prediction = (analytics.averageScore + analytics.trend).coerceIn(0.0, 100.0)
+                                        val prediction = (displayAvg + displayTrend).coerceIn(0.0, 100.0)
                                         Spacer(modifier = Modifier.height(8.dp))
                                         Text(
                                             text = "Прогноз: ${String.format("%.1f", prediction)}",
                                             style = MaterialTheme.typography.labelLarge,
-                                            color = MaterialTheme.colorScheme.primary
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (isSimulationMode) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
                                         )
                                     }
+                                    TrendIndicator(trend = displayTrend)
                                 }
 
-                                // Правая часть: Тренд (Стрелка)
-                                state.analytics?.let { analytics ->
-                                    TrendIndicator(trend = analytics.trend)
+                                if (isSimulationMode) {
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Text("След. оценка: ${simulatedScore.toInt()}", style = MaterialTheme.typography.labelMedium)
+                                    Slider(
+                                        value = simulatedScore,
+                                        onValueChange = { simulatedScore = it },
+                                        valueRange = 0f..100f,
+                                        steps = 19
+                                    )
                                 }
                             }
                         }
+                        Spacer(modifier = Modifier.height(24.dp))
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    // 2. ГРАФИК
+                    item {
+                        Text("Динамика оценок:", style = MaterialTheme.typography.titleMedium)
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                    // 2. ГРАФИК (Вставляем сюда!)
-                    Text("Динамика оценок:", style = MaterialTheme.typography.titleMedium)
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    val history = state.analytics?.history ?: emptyList()
-                    if (history.isNotEmpty()) {
-                        ScoreChart(
-                            scores = history,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(120.dp) // Высота графика
-                        )
-                    } else {
-                        Text("Пока нет данных для графика", color = Color.Gray, style = MaterialTheme.typography.bodySmall)
+                        if (displayHistory.isNotEmpty()) {
+                            ScoreChart(
+                                scores = displayHistory,
+                                modifier = Modifier.fillMaxWidth().height(150.dp),
+                                graphColor = if (isSimulationMode) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
+                            )
+                        } else {
+                            Text("Нет данных", color = Color.Gray)
+                        }
+                        Spacer(modifier = Modifier.height(24.dp))
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    // 3. УСПЕВАЕМОСТЬ ПО ПРЕДМЕТАМ
+                    item {
+                        Text("По предметам:", style = MaterialTheme.typography.titleMedium)
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
 
-                    Text("Успеваемость по предметам:", style = MaterialTheme.typography.titleMedium)
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    state.analytics?.disciplines?.forEach { disc ->
+                    val disciplines = state.analytics?.disciplines ?: emptyList()
+                    items(disciplines) { disc ->
                         Column(modifier = Modifier.padding(vertical = 8.dp)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -145,7 +178,6 @@ fun ProfileScreen(
                                 Text("${disc.score.toInt()}%", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
                             }
                             Spacer(modifier = Modifier.height(4.dp))
-                            // Прогресс-бар
                             LinearProgressIndicator(
                                 progress = { (disc.score / 100).toFloat() },
                                 modifier = Modifier.fillMaxWidth().height(6.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(3.dp)),
@@ -154,31 +186,30 @@ fun ProfileScreen(
                         }
                     }
 
-                    Text("Рекомендуем повторить:", style = MaterialTheme.typography.titleMedium)
-                    Spacer(modifier = Modifier.height(8.dp))
+                    // 4. РЕКОМЕНДАЦИИ
+                    item {
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Text("Рекомендации:", style = MaterialTheme.typography.titleMedium)
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
 
                     val recs = state.analytics?.recommendations ?: emptyList()
                     if (recs.isEmpty()) {
-                        Text("У вас нет задолженностей! 🎉", color = Color.Gray)
+                        item { Text("Нет рекомендаций 🎉", color = Color.Gray) }
                     } else {
-                        LazyColumn {
-                            items(recs) { topic ->
-                                Card(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 4.dp)
-                                        // 3. ДОБАВИЛИ КЛИК ПО КАРТОЧКЕ
-                                        .clickable {
-                                            viewModel.setEvent(ProfileContract.Event.OnRecommendationClicked(topic.id))
-                                        },
-                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
-                                ) {
-                                    Text(
-                                        text = topic.name,
-                                        modifier = Modifier.padding(16.dp),
-                                        color = MaterialTheme.colorScheme.onErrorContainer
-                                    )
-                                }
+                        items(recs) { topic ->
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp)
+                                    .clickable { viewModel.setEvent(ProfileContract.Event.OnRecommendationClicked(topic.id)) },
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                            ) {
+                                Text(
+                                    text = topic.name,
+                                    modifier = Modifier.padding(16.dp),
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
                             }
                         }
                     }
@@ -187,43 +218,3 @@ fun ProfileScreen(
         }
     }
 }
-
-@Composable
-fun TrendIndicator(trend: Double) {
-    val isPositive = trend > 0
-    val isNeutral = trend == 0.0
-
-    val color = when {
-        isPositive -> Color(0xFF4CAF50)
-        isNeutral -> Color.Gray
-        else -> Color(0xFFF44336)
-    }
-
-    val icon = when {
-        isPositive -> Icons.Default.KeyboardArrowUp
-        isNeutral -> Icons.Default.Refresh
-        else -> Icons.Default.KeyboardArrowDown
-    }
-
-    val text = when {
-        isPositive -> "Рост"
-        isNeutral -> "Стабильно"
-        else -> "Спад"
-    }
-
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = color,
-            modifier = Modifier.size(48.dp)
-        )
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelSmall,
-            color = color,
-            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
-        )
-    }
-}
-
