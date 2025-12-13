@@ -54,6 +54,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.compose.markdown)
     implementation(libs.androidx.material.icons.extended)
 
     // Navigation

@@ -19,6 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.flow.collectLatest
+import dev.jeziellago.compose.markdowntext.MarkdownText
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,9 +70,17 @@ fun LectureScreen(
                             .padding(16.dp)
                             .verticalScroll(rememberScrollState())
                     ) {
+                        // Заголовок оставляем обычным текстом (или тоже можно в MD)
                         Text(text = lecture.title, style = MaterialTheme.typography.headlineSmall)
+
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text(text = lecture.content, style = MaterialTheme.typography.bodyLarge)
+
+                        // ВМЕСТО ОБЫЧНОГО Text:
+                        MarkdownText(
+                            markdown = lecture.content,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 }
             }
