@@ -10,11 +10,11 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.lawnavigator.presentation.components.EmptyScreen
 import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -76,23 +76,29 @@ fun SearchScreen(
                 LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
             }
 
-            // Список результатов
+            // Список результатов или Пустой экран
             LazyColumn(
-                contentPadding = PaddingValues(bottom = 16.dp)
+                contentPadding = PaddingValues(bottom = 16.dp),
+                modifier = Modifier.fillMaxSize()
             ) {
-                if (state.results.isEmpty() && state.query.length > 2 && !state.isLoading) {
+                // Если ничего не найдено
+                if (!state.isLoading && state.query.length > 2 && state.results.isEmpty()) {
                     item {
-                        Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                            Text("Ничего не найдено", color = Color.Gray)
+                        // fillParentMaxSize заставляет элемент занять все свободное место в списке
+                        Box(modifier = Modifier.fillParentMaxSize()) {
+                            EmptyScreen(
+                                message = "По запросу \"${state.query}\" ничего не найдено"
+                            )
                         }
                     }
                 }
 
+                // Результаты
                 items(state.results) { lecture ->
                     ListItem(
                         headlineContent = { Text(lecture.title) },
                         supportingContent = {
-                            // Показываем кусочек текста для контекста
+                            // Показываем кусочек текста для контекста (первые 60 символов)
                             Text(
                                 text = lecture.content.take(60).replace("\n", " ") + "...",
                                 color = Color.Gray

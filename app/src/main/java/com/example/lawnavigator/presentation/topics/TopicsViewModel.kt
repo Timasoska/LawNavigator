@@ -27,11 +27,14 @@ class TopicsViewModel @Inject constructor(
         when (event) {
             is TopicsContract.Event.OnBackClicked -> setEffect { TopicsContract.Effect.NavigateBack }
             is TopicsContract.Event.OnTopicClicked -> setEffect { TopicsContract.Effect.NavigateToLecture(event.topicId) }
+            is TopicsContract.Event.OnRetryClicked -> loadTopics() // <--- Добавь обработку
         }
     }
 
     private fun loadTopics() {
-        setState { copy(isLoading = true) }
+        // ВАЖНО: Сбрасываем ошибку перед началом загрузки!
+        setState { copy(isLoading = true, error = null) }
+
         viewModelScope.launch {
             getTopicsUseCase(disciplineId)
                 .onSuccess { topics ->

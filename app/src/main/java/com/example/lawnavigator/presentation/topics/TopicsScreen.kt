@@ -26,6 +26,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.lawnavigator.presentation.components.EmptyScreen
+import com.example.lawnavigator.presentation.components.ErrorScreen
+import com.example.lawnavigator.presentation.components.LoadingScreen
 import kotlinx.coroutines.flow.collectLatest
 
 /**
@@ -73,29 +76,46 @@ fun TopicsScreen(
         }
     ) { padding ->
         Box(modifier = Modifier.padding(padding).fillMaxSize()) {
-            if (state.isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            } else {
-                LazyColumn {
-                    items(state.topics) { topic ->
-                        ListItem(
-                            headlineContent = { Text(topic.name) },
-                            // По клику на саму строку -> Лекция
-                            modifier = Modifier.clickable {
-                                viewModel.setEvent(TopicsContract.Event.OnTopicClicked(topic.id))
-                            },
-                            // Иконка справа -> Тест
-                            trailingContent = {
-                                IconButton(onClick = { onNavigateToTest(topic.id) }) {
-                                    Icon(
-                                        imageVector = Icons.Default.PlayArrow,
-                                        contentDescription = "Пройти тест"
-                                    )
-                                }
-                            },
-                            shadowElevation = 2.dp
-                        )
-                        HorizontalDivider()
+            when {
+                // 1. Загрузка
+                state.isLoading -> LoadingScreen()
+
+                // 2. Ошибка
+                state.error != null -> {
+                    ErrorScreen(
+                        message = state.error ?: "Ошибка загрузки тем",
+                        onRetry = { viewModel.setEvent(TopicsContract.Event.OnRetryClicked) }
+                    )
+                }
+
+                // 3. Пусто
+                state.topics.isEmpty() -> {
+                    EmptyScreen(message = "В этой дисциплине пока нет тем")
+                }
+
+                // 4. Данные
+                else -> {
+                    LazyColumn {
+                        items(state.topics) { topic ->
+                            ListItem(
+                                headlineContent = { Text(topic.name) },
+                                // По клику на саму строку -> Лекция
+                                modifier = Modifier.clickable {
+                                    viewModel.setEvent(TopicsContract.Event.OnTopicClicked(topic.id))
+                                },
+                                // Иконка справа -> Тест
+                                trailingContent = {
+                                    IconButton(onClick = { onNavigateToTest(topic.id) }) {
+                                        Icon(
+                                            imageVector = Icons.Default.PlayArrow,
+                                            contentDescription = "Пройти тест"
+                                        )
+                                    }
+                                },
+                                shadowElevation = 2.dp
+                            )
+                            HorizontalDivider()
+                        }
                     }
                 }
             }

@@ -16,6 +16,7 @@ class TopicsContract {
     sealed class Event : ViewIntent {
         data object OnBackClicked : Event()
         data class OnTopicClicked(val topicId: Int) : Event()
+        data object OnRetryClicked : Event() // <--- Добавь это
     }
 
     sealed class Effect : ViewSideEffect {

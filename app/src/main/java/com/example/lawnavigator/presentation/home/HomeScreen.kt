@@ -17,6 +17,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.lawnavigator.presentation.components.EmptyScreen
+import com.example.lawnavigator.presentation.components.ErrorScreen
+import com.example.lawnavigator.presentation.components.LoadingScreen
 import kotlinx.coroutines.flow.collectLatest
 
 
@@ -65,18 +68,23 @@ fun HomeScreen(
             contentAlignment = Alignment.Center
         ) {
             when {
-                state.isLoading -> CircularProgressIndicator()
+                // 1. Загрузка
+                state.isLoading -> LoadingScreen()
 
+                // 2. Ошибка
                 state.error != null -> {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(text = state.error ?: "Ошибка", color = MaterialTheme.colorScheme.error)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Button(onClick = { viewModel.setEvent(HomeContract.Event.OnRetryClicked) }) {
-                            Text("Повторить")
-                        }
-                    }
+                    ErrorScreen(
+                        message = state.error ?: "Неизвестная ошибка",
+                        onRetry = { viewModel.setEvent(HomeContract.Event.OnRetryClicked) }
+                    )
                 }
 
+                // 3. Пустой список (если вдруг с сервера пришел пустой массив)
+                state.disciplines.isEmpty() -> {
+                    EmptyScreen(message = "Список дисциплин пуст")
+                }
+
+                // 4. Контент
                 else -> {
                     LazyColumn(
                         contentPadding = PaddingValues(16.dp),
