@@ -22,5 +22,7 @@ sealed class Screen(val route: String) {
 
     data object Favorites : Screen("favorites") // <--- ДОБАВИТЬ ЭТО
 
+    data object Leaderboard : Screen("leaderboard") // <--- Добавь
+
 
 }

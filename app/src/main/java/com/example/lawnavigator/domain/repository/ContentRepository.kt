@@ -1,6 +1,7 @@
 package com.example.lawnavigator.domain.repository
 
 import com.example.lawnavigator.domain.model.Discipline
+import com.example.lawnavigator.domain.model.LeaderboardUser
 import com.example.lawnavigator.domain.model.Lecture
 import com.example.lawnavigator.domain.model.TestContent
 import com.example.lawnavigator.domain.model.TestResult
@@ -17,5 +18,7 @@ interface ContentRepository {
     suspend fun getFavorites(): Result<List<Lecture>>
     suspend fun addToFavorites(lectureId: Int): Result<Unit>
     suspend fun removeFromFavorites(lectureId: Int): Result<Unit>
+    suspend fun getLeaderboard(): Result<List<LeaderboardUser>>
+
 }
 

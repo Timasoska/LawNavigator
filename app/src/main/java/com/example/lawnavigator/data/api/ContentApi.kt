@@ -1,6 +1,7 @@
 package com.example.lawnavigator.data.api
 
 import com.example.lawnavigator.data.dto.DisciplineDto
+import com.example.lawnavigator.data.dto.LeaderboardItemDto
 import com.example.lawnavigator.data.dto.LectureDto
 import com.example.lawnavigator.data.dto.ProgressDto
 import com.example.lawnavigator.data.dto.SubmitAnswerRequest
@@ -74,6 +75,11 @@ interface ContentApi {
         @Path("id") testId: Int,
         @Body answers: List<SubmitAnswerRequest>
     ): TestResultDto
+
+    @GET("api/analytics/leaderboard")
+    suspend fun getLeaderboard(
+        @Header("Authorization") token: String
+    ): List<LeaderboardItemDto>
 
     /**
      * Получает общую статистику успеваемости.

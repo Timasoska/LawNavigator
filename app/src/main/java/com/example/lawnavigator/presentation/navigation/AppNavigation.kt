@@ -57,6 +57,9 @@ fun AppNavigation(
                 // ПЕРЕХОД В ИЗБРАННОЕ
                 onNavigateToFavorites = {
                     navController.navigate(Screen.Favorites.route)
+                },
+                onNavigateToLeaderboard = {
+                    navController.navigate(Screen.Leaderboard.route)
                 }
             )
         }
@@ -146,6 +149,11 @@ fun AppNavigation(
                 }
             )
         }
-
+        // LeaderboardScreen
+        composable(Screen.Leaderboard.route) {
+            com.example.lawnavigator.presentation.leaderboard.LeaderboardScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
     }
 }

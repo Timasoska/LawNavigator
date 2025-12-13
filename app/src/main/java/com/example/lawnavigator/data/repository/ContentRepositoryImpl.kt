@@ -5,6 +5,7 @@ import com.example.lawnavigator.data.dto.SubmitAnswerRequest
 import com.example.lawnavigator.data.local.TokenManager
 import com.example.lawnavigator.domain.model.Answer
 import com.example.lawnavigator.domain.model.Discipline
+import com.example.lawnavigator.domain.model.LeaderboardUser
 import com.example.lawnavigator.domain.model.Lecture
 import com.example.lawnavigator.domain.model.Question
 import com.example.lawnavigator.domain.model.TestContent
@@ -26,6 +27,24 @@ class ContentRepositoryImpl @Inject constructor(
     private val api: ContentApi,
     private val tokenManager: TokenManager
 ) : ContentRepository {
+
+    override suspend fun getLeaderboard(): Result<List<LeaderboardUser>> {
+        return try {
+            val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
+            val dtos = api.getLeaderboard("Bearer $token")
+
+            val users = dtos.mapIndexed { index, dto ->
+                LeaderboardUser(
+                    email = dto.email,
+                    score = dto.score,
+                    rank = index + 1 // Индекс начинается с 0, а место с 1
+                )
+            }
+            Result.success(users)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 
     override suspend fun getFavorites(): Result<List<Lecture>> {
         return try {

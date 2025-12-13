@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
@@ -31,7 +32,8 @@ fun HomeScreen(
     onNavigateToTopics: (Int) -> Unit,
     onNavigateToProfile: () -> Unit, // <--- Добавляем новый колбэк
     onNavigateToSearch: () -> Unit, // <--- 1. ДОБАВЛЯЕМ ЭТОТ ПАРАМЕТР
-    onNavigateToFavorites: () -> Unit // <--- 1. НОВЫЙ ПАРАМЕТР
+    onNavigateToFavorites: () -> Unit, // <--- 1. НОВЫЙ ПАРАМЕТР
+    onNavigateToLeaderboard: () -> Unit // <--- Новый параметр
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -52,6 +54,11 @@ fun HomeScreen(
                     // Поиск
                     IconButton(onClick = onNavigateToSearch) {
                         Icon(Icons.Default.Search, contentDescription = "Поиск")
+                    }
+
+                    // КНОПКА РЕЙТИНГА
+                    IconButton(onClick = onNavigateToLeaderboard) {
+                        Icon(Icons.Default.EmojiEvents, contentDescription = "Рейтинг") // Кубок
                     }
 
                     // ИЗБРАННОЕ (СЕРДЕЧКО)
