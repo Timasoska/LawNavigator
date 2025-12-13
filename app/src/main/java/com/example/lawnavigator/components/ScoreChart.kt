@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -22,6 +24,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -32,6 +36,16 @@ fun ScoreChart(
 ) {
     if (scores.isEmpty()) return
 
+    // Анимация: прогресс от 0.0 до 1.0 за 1.5 секунды
+    val animationProgress = remember { androidx.compose.animation.core.Animatable(0f) }
+
+    LaunchedEffect(scores) {
+        animationProgress.animateTo(
+            targetValue = 1f,
+            animationSpec = androidx.compose.animation.core.tween(durationMillis = 1500, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+        )
+    }
+
     Row(
         modifier = modifier
             .background(
@@ -41,7 +55,7 @@ fun ScoreChart(
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // --- 1. ШКАЛА (Y-axis) ---
+        // --- 1. ШКАЛА Y (статичная) ---
         Column(
             modifier = Modifier.fillMaxHeight(),
             verticalArrangement = Arrangement.SpaceBetween,
@@ -54,25 +68,25 @@ fun ScoreChart(
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        // --- 2. ГРАФИК ---
+        // --- 2. ГРАФИК (Анимированный) ---
         Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val width = size.width
                 val height = size.height
                 val maxScore = 100f
 
-                // Если точек мало, распределяем их равномерно
+                // Расстояние между точками по X
                 val stepX = if (scores.size > 1) width / (scores.size - 1) else 0f
 
-                // Подготовка координат
+                // Вычисляем координаты всех точек
                 val points = scores.mapIndexed { index, score ->
                     val x = index * stepX
                     val y = height - (score / maxScore * height)
                     Offset(x, y)
                 }
 
-                // 1. Рисуем сетку (пунктирные линии)
-                val gridLines = listOf(0f, height / 2, height) // Верх, Центр, Низ
+                // 1. Рисуем сетку
+                val gridLines = listOf(0f, height / 2, height)
                 gridLines.forEach { y ->
                     drawLine(
                         color = Color.Gray.copy(alpha = 0.3f),
@@ -83,54 +97,73 @@ fun ScoreChart(
                     )
                 }
 
-                // 2. Путь для линии
+                if (points.isEmpty()) return@Canvas
+
+                // 2. Создаем ПЛАВНЫЙ путь
                 val path = Path().apply {
-                    points.forEachIndexed { index, point ->
-                        if (index == 0) moveTo(point.x, point.y) else lineTo(point.x, point.y)
+                    moveTo(points.first().x, points.first().y)
+
+                    for (i in 0 until points.size - 1) {
+                        val p1 = points[i]
+                        val p2 = points[i + 1]
+
+                        val controlPoint1 = Offset((p1.x + p2.x) / 2f, p1.y)
+                        val controlPoint2 = Offset((p1.x + p2.x) / 2f, p2.y)
+
+                        cubicTo(controlPoint1.x, controlPoint1.y, controlPoint2.x, controlPoint2.y, p2.x, p2.y)
                     }
                 }
 
-                // 3. Путь для градиента (заливка под графиком)
+                // 3. Создаем путь для заливки
                 val fillPath = Path().apply {
                     addPath(path)
-                    lineTo(width, height) // Вниз вправо
-                    lineTo(0f, height)    // Вниз влево
+                    lineTo(points.last().x, height)
+                    lineTo(points.first().x, height)
                     close()
                 }
 
-                // Рисуем заливку (Градиент сверху вниз)
-                drawPath(
-                    path = fillPath,
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            graphColor.copy(alpha = 0.4f), // Полупрозрачный цвет сверху
-                            Color.Transparent              // Прозрачный снизу
-                        ),
-                        endY = height
-                    )
-                )
+                val currentWidth = width * animationProgress.value
 
-                // Рисуем саму линию
-                drawPath(
-                    path = path,
-                    color = graphColor,
-                    style = Stroke(width = 3.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
-                )
+                // ВАЖНО: Используем withTransform из DrawScope
+                withTransform({
+                    clipRect(
+                        left = 0f,
+                        top = 0f,
+                        right = currentWidth,
+                        bottom = height
+                    )
+                }) {
+                    // Заливка
+                    drawPath(
+                        path = fillPath,
+                        brush = Brush.verticalGradient(
+                            colors = listOf(graphColor.copy(alpha = 0.4f), Color.Transparent),
+                            endY = height
+                        )
+                    )
+
+                    // Линия
+                    drawPath(
+                        path = path,
+                        color = graphColor,
+                        style = Stroke(width = 3.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                    )
+                }
 
                 // 4. Рисуем точки
                 points.forEach { point ->
-                    // Белая подложка (обводка)
-                    drawCircle(
-                        color = Color.White, // Или цвет фона (MaterialTheme.colorScheme.surface)
-                        radius = 6.dp.toPx(),
-                        center = point
-                    )
-                    // Цветная точка
-                    drawCircle(
-                        color = graphColor,
-                        radius = 4.dp.toPx(),
-                        center = point
-                    )
+                    if (point.x <= currentWidth) {
+                        drawCircle(
+                            color = Color.White,
+                            radius = 6.dp.toPx(),
+                            center = point
+                        )
+                        drawCircle(
+                            color = graphColor,
+                            radius = 4.dp.toPx(),
+                            center = point
+                        )
+                    }
                 }
             }
         }
