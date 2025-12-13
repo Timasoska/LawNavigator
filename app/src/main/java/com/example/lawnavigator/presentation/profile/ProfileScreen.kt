@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.lawnavigator.components.ScoreChart
 import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -78,6 +79,7 @@ fun ProfileScreen(
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text("Ваш прогресс", style = MaterialTheme.typography.titleLarge)
+
                             Spacer(modifier = Modifier.height(16.dp))
 
                             Row(
@@ -110,7 +112,25 @@ fun ProfileScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // 2. ГРАФИК (Вставляем сюда!)
+                    Text("Динамика оценок:", style = MaterialTheme.typography.titleMedium)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    val history = state.analytics?.history ?: emptyList()
+                    if (history.isNotEmpty()) {
+                        ScoreChart(
+                            scores = history,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(120.dp) // Высота графика
+                        )
+                    } else {
+                        Text("Пока нет данных для графика", color = Color.Gray, style = MaterialTheme.typography.bodySmall)
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     Text("Успеваемость по предметам:", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(8.dp))
@@ -206,3 +226,4 @@ fun TrendIndicator(trend: Double) {
         )
     }
 }
+

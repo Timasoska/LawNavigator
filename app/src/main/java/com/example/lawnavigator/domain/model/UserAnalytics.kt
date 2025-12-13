@@ -7,6 +7,7 @@ data class UserAnalytics(
     val testsPassed: Int,
     val averageScore: Double,
     val trend: Double,
+    val history: List<Int>, // <--- ДОБАВЬ ЭТУ СТРОКУ
     val recommendations: List<Topic>, // Переиспользуем модель Topic
     val disciplines: List<DisciplineStat> = emptyList(), // <--- Добавили
 )
