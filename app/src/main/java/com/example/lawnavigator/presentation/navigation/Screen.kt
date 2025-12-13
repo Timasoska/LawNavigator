@@ -19,4 +19,8 @@ sealed class Screen(val route: String) {
     data object Profile : Screen("profile")
 
     data object Search : Screen("search")
+
+    data object Favorites : Screen("favorites") // <--- ДОБАВИТЬ ЭТО
+
+
 }

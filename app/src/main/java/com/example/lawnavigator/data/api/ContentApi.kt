@@ -17,6 +17,11 @@ import retrofit2.http.Query
 
 interface ContentApi {
 
+    @GET("api/favorites")
+    suspend fun getFavorites(
+        @Header("Authorization") token: String
+    ): List<LectureDto>
+
     @GET("api/search")
     suspend fun searchLectures(
         @Header("Authorization") token: String,

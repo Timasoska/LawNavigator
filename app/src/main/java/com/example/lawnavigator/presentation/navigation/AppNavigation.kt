@@ -42,18 +42,22 @@ fun AppNavigation(
             )
         }
 
+        // HOME SCREEN
         composable(Screen.Home.route) {
             HomeScreen(
                 onNavigateToTopics = { disciplineId ->
                     navController.navigate(Screen.Topics.createRoute(disciplineId))
                 },
-                onNavigateToProfile = { // <--- Реализуем переход
+                onNavigateToProfile = {
                     navController.navigate(Screen.Profile.route)
                 },
                 onNavigateToSearch = {
                     navController.navigate(Screen.Search.route)
+                },
+                // ПЕРЕХОД В ИЗБРАННОЕ
+                onNavigateToFavorites = {
+                    navController.navigate(Screen.Favorites.route)
                 }
-
             )
         }
 
@@ -126,6 +130,18 @@ fun AppNavigation(
                 },
                 onNavigateToLecture = { lectureId ->
                     // Переходим к чтению найденной лекции
+                    navController.navigate(Screen.Lecture.createRoute(lectureId))
+                }
+            )
+        }
+
+        // ЭКРАН ИЗБРАННОГО (НОВЫЙ БЛОК)
+        composable(Screen.Favorites.route) {
+            com.example.lawnavigator.presentation.favorites.FavoritesScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onNavigateToLecture = { lectureId ->
                     navController.navigate(Screen.Lecture.createRoute(lectureId))
                 }
             )

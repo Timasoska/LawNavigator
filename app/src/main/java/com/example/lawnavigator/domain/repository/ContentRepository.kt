@@ -14,6 +14,8 @@ interface ContentRepository {
     suspend fun getTest(topicId: Int): Result<TestContent>
     suspend fun submitTest(testId: Int, answers: Map<Int, Int>): Result<TestResult>
     suspend fun searchLectures(query: String): Result<List<Lecture>>
-
+    suspend fun getFavorites(): Result<List<Lecture>>
+    suspend fun addToFavorites(lectureId: Int): Result<Unit>
+    suspend fun removeFromFavorites(lectureId: Int): Result<Unit>
 }
 

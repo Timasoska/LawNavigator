@@ -35,7 +35,14 @@ class LectureViewModel @Inject constructor(
         viewModelScope.launch {
             lectureUseCase.getLecture(lectureId)
                 .onSuccess { lecture ->
-                    setState { copy(isLoading = false, lecture = lecture) }
+                    setState {
+                        copy(
+                            isLoading = false,
+                            lecture = lecture,
+                            // ВАЖНО: Синхронизируем состояние кнопки с данными лекции
+                            isFavorite = lecture.isFavorite
+                        )
+                    }
                 }
                 .onFailure {
                     setState { copy(isLoading = false) }

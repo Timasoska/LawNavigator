@@ -27,6 +27,39 @@ class ContentRepositoryImpl @Inject constructor(
     private val tokenManager: TokenManager
 ) : ContentRepository {
 
+    override suspend fun getFavorites(): Result<List<Lecture>> {
+        return try {
+            val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
+            val dtos = api.getFavorites("Bearer $token")
+            val lectures = dtos.map {
+                Lecture(it.id, it.title, it.content, it.topicId, it.isFavorite)
+            }
+            Result.success(lectures)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun addToFavorites(lectureId: Int): Result<Unit> {
+        return try {
+            val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
+            api.addToFavorites("Bearer $token", lectureId)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun removeFromFavorites(lectureId: Int): Result<Unit> {
+        return try {
+            val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
+            api.removeFromFavorites("Bearer $token", lectureId)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     override suspend fun searchLectures(query: String): Result<List<Lecture>> {
         return try {
             val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
@@ -80,8 +113,14 @@ class ContentRepositoryImpl @Inject constructor(
         return try {
             val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
             val dto = api.getLecture("Bearer $token", lectureId)
-            // Пока isFavorite = false, позже (в профиле) мы будем это проверять умнее
-            Result.success(Lecture(dto.id, dto.title, dto.content, dto.topicId))
+
+            Result.success(Lecture(
+                id = dto.id,
+                title = dto.title,
+                content = dto.content,
+                topicId = dto.topicId,
+                isFavorite = dto.isFavorite // <--- Теперь берем с сервера!
+            ))
         } catch (e: Exception) {
             Result.failure(e)
         }

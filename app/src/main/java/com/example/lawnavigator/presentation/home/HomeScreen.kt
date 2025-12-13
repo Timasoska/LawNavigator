@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -29,8 +30,8 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     onNavigateToTopics: (Int) -> Unit,
     onNavigateToProfile: () -> Unit, // <--- Добавляем новый колбэк
-    onNavigateToSearch: () -> Unit // <--- 1. ДОБАВЛЯЕМ ЭТОТ ПАРАМЕТР
-
+    onNavigateToSearch: () -> Unit, // <--- 1. ДОБАВЛЯЕМ ЭТОТ ПАРАМЕТР
+    onNavigateToFavorites: () -> Unit // <--- 1. НОВЫЙ ПАРАМЕТР
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -48,12 +49,17 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text("Дисциплины") },
                 actions = {
-                    // Кнопка ПОИСКА
-                    IconButton(onClick = onNavigateToSearch) { // <--- 2. ВЫЗЫВАЕМ КОЛБЭК ТУТ
+                    // Поиск
+                    IconButton(onClick = onNavigateToSearch) {
                         Icon(Icons.Default.Search, contentDescription = "Поиск")
                     }
 
-                    // Кнопка ПРОФИЛЯ
+                    // ИЗБРАННОЕ (СЕРДЕЧКО)
+                    IconButton(onClick = onNavigateToFavorites) { // <--- 2. ВЫЗОВ
+                        Icon(Icons.Default.Favorite, contentDescription = "Избранное")
+                    }
+
+                    // Профиль
                     IconButton(onClick = onNavigateToProfile) {
                         Icon(Icons.Default.Person, contentDescription = "Профиль")
                     }
