@@ -8,16 +8,20 @@ import com.example.lawnavigator.domain.usecase.TestUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+
 
 @HiltViewModel
 class TestViewModel @Inject constructor(
     private val testUseCase: TestUseCase,
-    private val submitTestUseCase: SubmitTestUseCase, // <--- ДОБАВЬ ЭТО
+    private val submitTestUseCase: SubmitTestUseCase,
     savedStateHandle: SavedStateHandle
 ) : BaseViewModel<TestContract.State, TestContract.Event, TestContract.Effect>() {
 
     private val topicId: Int = checkNotNull(savedStateHandle["topicId"])
-
+    private var timerJob: Job? = null
 
     override fun createInitialState() = TestContract.State()
 
@@ -30,29 +34,35 @@ class TestViewModel @Inject constructor(
             is TestContract.Event.OnAnswerSelected -> handleAnswerSelection(event.questionId, event.answerId)
             is TestContract.Event.OnNextClicked -> handleNextClick()
             is TestContract.Event.OnBackClicked -> setEffect { TestContract.Effect.NavigateBack }
-            // Новое событие: переход в режим просмотра ошибок
             is TestContract.Event.OnReviewClicked -> {
                 setState { copy(isReviewMode = true, resultScore = null, currentQuestionIndex = 0) }
+            }
+            // Таймер
+            is TestContract.Event.OnTimerTick -> {
+                val current = currentState.timeLeft
+                if (current != null && current > 0) {
+                    setState { copy(timeLeft = current - 1) }
+                    if (current - 1 == 0) {
+                        setEvent(TestContract.Event.OnTimeExpired)
+                    }
+                }
+            }
+            is TestContract.Event.OnTimeExpired -> {
+                stopTimer()
+                submitTest() // Автоматическая отправка
             }
         }
     }
 
     private fun handleAnswerSelection(questionId: Int, answerId: Int) {
-        // Если мы в режиме просмотра, менять ответы нельзя
         if (currentState.isReviewMode) return
 
         val question = currentState.test?.questions?.find { it.id == questionId } ?: return
         val currentSelection = currentState.selectedAnswers[questionId] ?: emptySet()
 
         val newSelection = if (question.isMultipleChoice) {
-            // Логика ЧЕКБОКСА (Множественный выбор)
-            if (currentSelection.contains(answerId)) {
-                currentSelection - answerId // Если уже выбран -> убираем
-            } else {
-                currentSelection + answerId // Если не выбран -> добавляем
-            }
+            if (currentSelection.contains(answerId)) currentSelection - answerId else currentSelection + answerId
         } else {
-            // Логика РАДИОКНОПКИ (Одиночный выбор)
             setOf(answerId)
         }
 
@@ -64,7 +74,6 @@ class TestViewModel @Inject constructor(
     private fun handleNextClick() {
         val test = currentState.test ?: return
 
-        // В режиме просмотра кнопка "Далее" просто листает, а в конце выходит
         if (currentState.isReviewMode) {
             if (currentState.currentQuestionIndex < test.questions.lastIndex) {
                 setState { copy(currentQuestionIndex = currentState.currentQuestionIndex + 1) }
@@ -74,7 +83,6 @@ class TestViewModel @Inject constructor(
             return
         }
 
-        // Обычный режим прохождения
         if (currentState.currentQuestionIndex < test.questions.lastIndex) {
             setState { copy(currentQuestionIndex = currentState.currentQuestionIndex + 1) }
         } else {
@@ -83,21 +91,44 @@ class TestViewModel @Inject constructor(
     }
 
     private fun loadTest() {
-        android.util.Log.d("TestDebug", "Запрос теста для topicId: $topicId") // <--- ЛОГ 1
-
         setState { copy(isLoading = true) }
         viewModelScope.launch {
             testUseCase.loadTest(topicId)
                 .onSuccess { test ->
-                    android.util.Log.d("TestDebug", "Успех! Получен тест: ${test.title}, вопросов: ${test.questions.size}") // <--- ЛОГ 2
-                    setState { copy(isLoading = false, test = test) } }
+                    setState {
+                        copy(
+                            isLoading = false,
+                            test = test,
+                            timeLeft = if (test.timeLimit > 0) test.timeLimit else null
+                        )
+                    }
+                    if (test.timeLimit > 0) {
+                        startTimer()
+                    }
+                }
                 .onFailure { error ->
-                    android.util.Log.e("TestDebug", "Ошибка загрузки: ${error.message}", error) // <--- ЛОГ 3
-                    setState { copy(isLoading = false) } }
+                    setState { copy(isLoading = false) }
+                }
         }
     }
 
+    private fun startTimer() {
+        timerJob?.cancel()
+        timerJob = viewModelScope.launch {
+            while (isActive) {
+                delay(1000)
+                setEvent(TestContract.Event.OnTimerTick)
+            }
+        }
+    }
+
+    private fun stopTimer() {
+        timerJob?.cancel()
+        timerJob = null
+    }
+
     private fun submitTest() {
+        stopTimer() // Останавливаем таймер
         val testId = currentState.test?.id ?: return
         setState { copy(isLoading = true) }
 
@@ -109,12 +140,17 @@ class TestViewModel @Inject constructor(
                             isLoading = false,
                             resultScore = result.score,
                             resultMessage = result.message,
-                            // Сохраняем правильные ответы для подсветки ошибок
-                            correctAnswersMap = result.correctAnswers
+                            correctAnswersMap = result.correctAnswers,
+                            timeLeft = null // Прячем таймер
                         )
                     }
                 }
                 .onFailure { setState { copy(isLoading = false) } }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        stopTimer()
     }
 }

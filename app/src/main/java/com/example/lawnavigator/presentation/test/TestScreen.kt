@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -38,17 +39,43 @@ fun TestScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        when {
-                            state.isReviewMode -> "Просмотр ошибок"
-                            state.resultScore != null -> "Результат"
-                            else -> "Вопрос ${state.currentQuestionIndex + 1} из ${state.test?.questions?.size ?: 0}"
-                        }
-                    )
+                    Column {
+                        Text(
+                            when {
+                                state.isReviewMode -> "Просмотр ошибок"
+                                state.resultScore != null -> "Результат"
+                                else -> "Вопрос ${state.currentQuestionIndex + 1} из ${state.test?.questions?.size ?: 0}"
+                            },
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
                 },
                 navigationIcon = {
                     IconButton(onClick = { viewModel.setEvent(TestContract.Event.OnBackClicked) }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                // ТАЙМЕР СПРАВА
+                actions = {
+                    state.timeLeft?.let { seconds ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(end = 16.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Timer,
+                                contentDescription = null,
+                                tint = if (seconds < 60) Color.Red else MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = formatTime(seconds),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = if (seconds < 60) Color.Red else MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                 }
             )
@@ -59,7 +86,6 @@ fun TestScreen(
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
             else if (state.resultScore != null) {
-                // ЭКРАН РЕЗУЛЬТАТА
                 ResultView(
                     score = state.resultScore!!,
                     message = state.resultMessage ?: "",
@@ -68,14 +94,12 @@ fun TestScreen(
                 )
             }
             else {
-                // ЭКРАН ВОПРОСА (ПРОХОЖДЕНИЕ ИЛИ ПРОСМОТР ОШИБОК)
                 state.test?.let { test ->
                     val currentQuestion = test.questions.getOrNull(state.currentQuestionIndex)
 
                     if (currentQuestion != null) {
                         Column(modifier = Modifier.padding(16.dp).fillMaxSize()) {
 
-                            // Прогресс бар
                             LinearProgressIndicator(
                                 progress = { (state.currentQuestionIndex + 1) / test.questions.size.toFloat() },
                                 modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
@@ -83,7 +107,6 @@ fun TestScreen(
 
                             Spacer(modifier = Modifier.height(24.dp))
 
-                            // Анимированная смена вопроса
                             AnimatedContent(
                                 targetState = currentQuestion,
                                 transitionSpec = {
@@ -94,10 +117,8 @@ fun TestScreen(
                             ) { question ->
                                 QuestionCard(
                                     question = question,
-                                    // Теперь передаем МНОЖЕСТВО выбранных ID
                                     selectedAnswerIds = state.selectedAnswers[question.id] ?: emptySet(),
                                     isReviewMode = state.isReviewMode,
-                                    // Правильные ответы для этого вопроса (если есть)
                                     correctAnswerIds = state.correctAnswersMap[question.id] ?: emptyList(),
                                     onAnswerSelect = { id ->
                                         viewModel.setEvent(TestContract.Event.OnAnswerSelected(question.id, id))
@@ -107,14 +128,12 @@ fun TestScreen(
 
                             Spacer(modifier = Modifier.weight(1f))
 
-                            // Кнопка навигации
                             val isAnswerSelected = !state.selectedAnswers[currentQuestion.id].isNullOrEmpty()
                             val isLastQuestion = state.currentQuestionIndex == test.questions.size - 1
 
                             Button(
                                 onClick = { viewModel.setEvent(TestContract.Event.OnNextClicked) },
                                 modifier = Modifier.fillMaxWidth().height(56.dp),
-                                // В режиме просмотра кнопку блокировать не надо
                                 enabled = isAnswerSelected || state.isReviewMode
                             ) {
                                 val text = if (state.isReviewMode) {
@@ -135,9 +154,9 @@ fun TestScreen(
 @Composable
 fun QuestionCard(
     question: Question,
-    selectedAnswerIds: Set<Int>, // Множество выбранных
+    selectedAnswerIds: Set<Int>,
     isReviewMode: Boolean,
-    correctAnswerIds: List<Int>, // Список правильных
+    correctAnswerIds: List<Int>,
     onAnswerSelect: (Int) -> Unit
 ) {
     Column {
@@ -159,29 +178,24 @@ fun QuestionCard(
         question.answers.forEach { answer ->
             val isSelected = selectedAnswerIds.contains(answer.id)
 
-            // --- ЛОГИКА ЦВЕТОВ ---
             var borderColor = MaterialTheme.colorScheme.outlineVariant
             var containerColor = MaterialTheme.colorScheme.surface
 
             if (isReviewMode) {
                 val isCorrect = correctAnswerIds.contains(answer.id)
                 if (isCorrect) {
-                    // Правильный ответ - всегда зеленый
                     borderColor = Color(0xFF4CAF50)
                     containerColor = Color(0xFF4CAF50).copy(alpha = 0.15f)
                 } else if (isSelected) {
-                    // Выбрали, но он неправильный - красный
                     borderColor = Color(0xFFF44336)
                     containerColor = Color(0xFFF44336).copy(alpha = 0.15f)
                 }
             } else {
-                // Обычный режим прохождения
                 if (isSelected) {
                     borderColor = MaterialTheme.colorScheme.primary
                     containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
                 }
             }
-            // ---------------------
 
             Card(
                 modifier = Modifier
@@ -196,15 +210,9 @@ fun QuestionCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (question.isMultipleChoice) {
-                        Checkbox(
-                            checked = isSelected,
-                            onCheckedChange = null // Клик на Card обрабатывает это
-                        )
+                        Checkbox(checked = isSelected, onCheckedChange = null)
                     } else {
-                        RadioButton(
-                            selected = isSelected,
-                            onClick = null
-                        )
+                        RadioButton(selected = isSelected, onClick = null)
                     }
 
                     Spacer(modifier = Modifier.width(8.dp))
@@ -235,20 +243,13 @@ fun ResultView(score: Int, message: String, onBack: () -> Unit, onReview: () -> 
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Кнопка просмотра ошибок
-        OutlinedButton(
-            onClick = onReview,
-            modifier = Modifier.fillMaxWidth(0.7f)
-        ) {
+        OutlinedButton(onClick = onReview, modifier = Modifier.fillMaxWidth(0.7f)) {
             Text("Посмотреть ошибки")
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(
-            onClick = onBack,
-            modifier = Modifier.fillMaxWidth(0.7f)
-        ) {
+        Button(onClick = onBack, modifier = Modifier.fillMaxWidth(0.7f)) {
             Text("Вернуться к темам")
         }
     }
@@ -275,4 +276,11 @@ fun DifficultyBadge(level: Int) {
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
         )
     }
+}
+
+// Форматирование секунд в MM:SS
+fun formatTime(seconds: Int): String {
+    val m = seconds / 60
+    val s = seconds % 60
+    return "%02d:%02d".format(m, s)
 }

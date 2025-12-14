@@ -169,13 +169,14 @@ class ContentRepositoryImpl @Inject constructor(
             val domainTest = TestContent(
                 id = dto.id,
                 title = dto.title,
+                timeLimit = dto.timeLimit, // <--- Маппинг времени
                 questions = dto.questions.map { q ->
                     Question(
                         id = q.id,
                         text = q.text,
                         difficulty = q.difficulty,
-                        isMultipleChoice = q.isMultipleChoice, // <--- Добавили
-                        answers = q.answers.map { a -> Answer(a.id, a.text) } // <--- Исправлено имя параметра
+                        isMultipleChoice = q.isMultipleChoice,
+                        answers = q.answers.map { a -> Answer(a.id, a.text) }
                     )
                 }
             )

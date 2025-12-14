@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 data class TestDto(
     val id: Int,
     val title: String,
+    val timeLimit: Int = 0, // <--- НОВОЕ ПОЛЕ (секунды)
     val questions: List<QuestionDto>
 )
 

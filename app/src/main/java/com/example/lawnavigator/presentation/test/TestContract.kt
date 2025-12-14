@@ -17,7 +17,11 @@ class TestContract {
 
         // Новые поля для режима просмотра ошибок
         val isReviewMode: Boolean = false,
-        val correctAnswersMap: Map<Int, List<Int>> = emptyMap()
+        val correctAnswersMap: Map<Int, List<Int>> = emptyMap(),
+
+        // Таймер
+        val timeLeft: Int? = null, // В секундах. Null если нет таймера
+        val isTimerRunning: Boolean = false
     ) : ViewState
 
     sealed class Event : ViewIntent {
@@ -25,6 +29,8 @@ class TestContract {
         data object OnNextClicked : Event() // <--- Кнопка "Далее" (или "Завершить")
         data object OnBackClicked : Event()
         data object OnReviewClicked : Event() // Посмотреть ошибки
+        data object OnTimerTick : Event() // Событие "прошла 1 секунда"
+        data object OnTimeExpired : Event() // Время вышло
     }
 
     sealed class Effect : ViewSideEffect {

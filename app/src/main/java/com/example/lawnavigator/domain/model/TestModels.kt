@@ -3,7 +3,8 @@ package com.example.lawnavigator.domain.model
 data class TestContent(
     val id: Int,
     val title: String,
-    val questions: List<Question>
+    val questions: List<Question>,
+    val timeLimit: Int = 0, // <--- НОВОЕ ПОЛЕ (0 - без ограничений)
 )
 
 data class Question(
