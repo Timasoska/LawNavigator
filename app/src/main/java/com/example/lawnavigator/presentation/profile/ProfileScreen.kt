@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.lawnavigator.presentation.components.MiniTrendIndicator
 import com.example.lawnavigator.presentation.components.ScoreChart
 import com.example.lawnavigator.presentation.components.TrendIndicator
 import com.example.lawnavigator.presentation.utils.calculateTrendLocal
@@ -169,20 +170,59 @@ fun ProfileScreen(
 
                     val disciplines = state.analytics?.disciplines ?: emptyList()
                     items(disciplines) { disc ->
-                        Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                        // Карточка дисциплины
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            elevation = CardDefaults.cardElevation(1.dp)
+                        ) {
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                modifier = Modifier
+                                    .padding(16.dp)
+                                    .fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(disc.name, style = MaterialTheme.typography.bodyMedium)
-                                Text("${disc.score.toInt()}%", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                                // ЛЕВАЯ ЧАСТЬ: Название и Прогресс
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = disc.name,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+
+                                    // Прогноз на следующий тест
+                                    val prediction = (disc.score + disc.trend).coerceIn(0.0, 100.0)
+                                    Text(
+                                        text = "Балл: ${disc.score.toInt()}  •  Прогноз: ${prediction.toInt()}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color.Gray
+                                    )
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    // Полоска прогресса
+                                    LinearProgressIndicator(
+                                        progress = { (disc.score / 100).toFloat() },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(8.dp)
+                                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(4.dp)),
+                                        color = if (disc.score >= 60) Color(0xFF4CAF50) else Color(0xFFFFC107),
+                                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.width(16.dp))
+
+                                // ПРАВАЯ ЧАСТЬ: Тренд (Стрелка)
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    // Используем наш компонент, но поменьше
+                                    MiniTrendIndicator(trend = disc.trend)
+                                }
                             }
-                            Spacer(modifier = Modifier.height(4.dp))
-                            LinearProgressIndicator(
-                                progress = { (disc.score / 100).toFloat() },
-                                modifier = Modifier.fillMaxWidth().height(6.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(3.dp)),
-                                color = if (disc.score >= 60) Color(0xFF4CAF50) else Color(0xFFFFC107),
-                            )
                         }
                     }
 
