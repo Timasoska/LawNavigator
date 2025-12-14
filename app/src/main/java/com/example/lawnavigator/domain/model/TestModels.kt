@@ -10,6 +10,7 @@ data class Question(
     val id: Int,
     val text: String,
     val difficulty: Int, // <--- Добавили
+    val isMultipleChoice: Boolean, // <--- Добавили
     val answers: List<Answer>
 )
 
@@ -20,5 +21,6 @@ data class Answer(
 
 data class TestResult(
     val score: Int,
-    val message: String
+    val message: String,
+    val correctAnswers: Map<Int, List<Int>> // <--- ДОБАВЬ ЭТО ПОЛЕ
 )

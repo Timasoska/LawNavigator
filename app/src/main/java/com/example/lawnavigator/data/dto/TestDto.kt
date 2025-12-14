@@ -14,6 +14,7 @@ data class QuestionDto(
     val id: Int,
     val text: String,
     val difficulty: Int,
+    val isMultipleChoice: Boolean, // <--- Добавили
     val answers: List<AnswerDto>
 )
 
@@ -32,6 +33,8 @@ data class SubmitAnswerRequest(
 @Serializable
 data class TestResultDto(
     val score: Int,
+    // ДОБАВЬ ВОТ ЭТИ ПОЛЯ:
     val correctCount: Int,
-    val totalCount: Int
+    val totalCount: Int,
+    val correctAnswers: Map<Int, List<Int>> = emptyMap()
 )

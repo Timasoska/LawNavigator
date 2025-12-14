@@ -7,7 +7,4 @@ import javax.inject.Inject
 
 class TestUseCase @Inject constructor(private val repository: ContentRepository) {
     suspend fun loadTest(topicId: Int): Result<TestContent> = repository.getTest(topicId)
-
-    suspend fun submit(testId: Int, answers: Map<Int, Int>): Result<TestResult> =
-        repository.submitTest(testId, answers)
 }

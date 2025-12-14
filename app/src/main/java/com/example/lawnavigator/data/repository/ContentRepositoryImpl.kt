@@ -2,6 +2,7 @@ package com.example.lawnavigator.data.repository
 
 import com.example.lawnavigator.data.api.ContentApi
 import com.example.lawnavigator.data.dto.SubmitAnswerRequest
+import com.example.lawnavigator.data.dto.TestResultDto
 import com.example.lawnavigator.data.local.TokenManager
 import com.example.lawnavigator.domain.model.Answer
 import com.example.lawnavigator.domain.model.Discipline
@@ -170,29 +171,28 @@ class ContentRepositoryImpl @Inject constructor(
                 title = dto.title,
                 questions = dto.questions.map { q ->
                     Question(
-                        q.id,
-                        q.text,
-                        difficulty = q.difficulty, // <--- Пробрасываем значение
-                        q.answers.map { a -> Answer(a.id, a.text) })
+                        id = q.id,
+                        text = q.text,
+                        difficulty = q.difficulty,
+                        isMultipleChoice = q.isMultipleChoice, // <--- Добавили
+                        answers = q.answers.map { a -> Answer(a.id, a.text) } // <--- Исправлено имя параметра
+                    )
                 }
             )
             Result.success(domainTest)
         } catch (e: Exception) { Result.failure(e) }
     }
 
-    override suspend fun submitTest(testId: Int, answers: Map<Int, Int>): Result<TestResult> {
+    override suspend fun submitTest(testId: Int, answers: List<SubmitAnswerRequest>): Result<TestResultDto> {
         return try {
             val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
 
-            // Превращаем Map<QuestionId, AnswerId> в список для сервера
-            val request = answers.map { (qId, aId) -> SubmitAnswerRequest(qId, aId) }
+            // Просто передаем список в API
+            val result = api.submitTest("Bearer $token", testId, answers)
 
-            val result = api.submitTest("Bearer $token", testId, request)
-
-            Result.success(TestResult(
-                score = result.score,
-                message = "Верно: ${result.correctCount} из ${result.totalCount}"
-            ))
-        } catch (e: Exception) { Result.failure(e) }
+            Result.success(result)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }
