@@ -15,6 +15,7 @@ import javax.inject.Inject
  * @param api Интерфейс Retrofit для общения с сервером.
  * @param tokenManager Класс для сохранения JWT токена в DataStore.
  */
+
 class AuthRepositoryImpl @Inject constructor(
     private val api: AuthApi,
     private val tokenManager: TokenManager
@@ -22,16 +23,19 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun register(email: String, password: String): Result<Unit> {
         return try {
+            // При регистрации с телефона мы пока не передаем inviteCode,
+            // поэтому роль по умолчанию будет "student", которую вернет сервер.
             val request = AuthRequestDto(email, password)
+
             val response = api.register(request)
-            // Сохраняем полученный токен локально
-            tokenManager.saveToken(response.token)
+
+            // СОХРАНЯЕМ И ТОКЕН, И РОЛЬ (которую прислал сервер)
+            tokenManager.saveAuthData(response.token, response.role)
+
             Result.success(Unit)
         } catch (e: IOException) {
-            // Ошибка сети (нет интернета)
             Result.failure(e)
         } catch (e: HttpException) {
-            // Ошибка сервера (4xx, 5xx)
             Result.failure(e)
         }
     }
@@ -40,7 +44,10 @@ class AuthRepositoryImpl @Inject constructor(
         return try {
             val request = AuthRequestDto(email, password)
             val response = api.login(request)
-            tokenManager.saveToken(response.token)
+
+            // СОХРАНЯЕМ И ТОКЕН, И РОЛЬ
+            tokenManager.saveAuthData(response.token, response.role)
+
             Result.success(Unit)
         } catch (e: IOException) {
             Result.failure(e)

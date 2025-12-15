@@ -16,6 +16,9 @@ import com.example.lawnavigator.domain.model.TestResult
 import com.example.lawnavigator.domain.model.Topic
 import com.example.lawnavigator.domain.repository.ContentRepository
 import kotlinx.coroutines.flow.first
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject
@@ -241,6 +244,29 @@ class ContentRepositoryImpl @Inject constructor(
                 Lecture(it.id, it.title, it.content, it.topicId, it.isFavorite)
             }
             Result.success(lectures)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun uploadDocx(topicId: Int, title: String, fileBytes: ByteArray): Result<Unit> {
+        return try {
+            val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
+
+            // 1. Готовим текстовые поля
+            val titleBody = title.toRequestBody("text/plain".toMediaTypeOrNull())
+            val topicIdBody = topicId.toString().toRequestBody("text/plain".toMediaTypeOrNull())
+
+            // 2. Готовим файл
+            val requestFile = fileBytes.toRequestBody(
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document".toMediaTypeOrNull()
+            )
+            val filePart = MultipartBody.Part.createFormData("file", "lecture.docx", requestFile)
+
+            // 3. Отправляем
+            api.uploadDocx("Bearer $token", titleBody, topicIdBody, filePart)
+
+            Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }

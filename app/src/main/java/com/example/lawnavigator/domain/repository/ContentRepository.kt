@@ -27,5 +27,7 @@ interface ContentRepository {
     suspend fun saveLectureProgress(lectureId: Int, progress: LectureProgress): Result<Unit>
     suspend fun getLecturesByTopic(topicId: Int): Result<List<Lecture>>
 
+    suspend fun uploadDocx(topicId: Int, title: String, fileBytes: ByteArray): Result<Unit>
+
 }
 

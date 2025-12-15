@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
-// Расширение для доступа к DataStore
 private val Context.dataStore by preferencesDataStore("auth_prefs")
 
 @Singleton
@@ -18,24 +17,26 @@ class TokenManager @Inject constructor(@ApplicationContext private val context: 
 
     companion object {
         private val TOKEN_KEY = stringPreferencesKey("jwt_token")
+        private val ROLE_KEY = stringPreferencesKey("user_role")
     }
 
-    // Чтение токена
-    val token: Flow<String?> = context.dataStore.data.map { preferences ->
-        preferences[TOKEN_KEY]
-    }
+    val token: Flow<String?> = context.dataStore.data.map { it[TOKEN_KEY] }
 
-    // Сохранение
-    suspend fun saveToken(token: String) {
+    // Если роли нет, считаем студентом (безопасный дефолт при чтении)
+    val role: Flow<String> = context.dataStore.data.map { it[ROLE_KEY] ?: "student" }
+
+    // Единственный правильный метод сохранения
+    suspend fun saveAuthData(token: String, role: String) {
         context.dataStore.edit { preferences ->
             preferences[TOKEN_KEY] = token
+            preferences[ROLE_KEY] = role
         }
     }
 
-    // Удаление (Logout)
     suspend fun deleteToken() {
         context.dataStore.edit { preferences ->
             preferences.remove(TOKEN_KEY)
+            preferences.remove(ROLE_KEY)
         }
     }
 }
