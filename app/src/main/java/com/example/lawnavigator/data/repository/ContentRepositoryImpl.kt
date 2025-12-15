@@ -232,4 +232,17 @@ class ContentRepositoryImpl @Inject constructor(
             Result.failure(e)
         }
     }
+
+    override suspend fun getLecturesByTopic(topicId: Int): Result<List<Lecture>> {
+        return try {
+            val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
+            val dtos = api.getLecturesByTopic("Bearer $token", topicId)
+            val lectures = dtos.map {
+                Lecture(it.id, it.title, it.content, it.topicId, it.isFavorite)
+            }
+            Result.success(lectures)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

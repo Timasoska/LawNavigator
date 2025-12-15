@@ -20,6 +20,12 @@ import retrofit2.http.Query
 
 interface ContentApi {
 
+    @GET("api/topics/{id}/lectures")
+    suspend fun getLecturesByTopic(
+        @Header("Authorization") token: String,
+        @Path("id") topicId: Int
+    ): List<LectureDto>
+
     // --- ЗАКЛАДКИ ---
     @GET("api/lectures/{id}/progress")
     suspend fun getLectureProgress(

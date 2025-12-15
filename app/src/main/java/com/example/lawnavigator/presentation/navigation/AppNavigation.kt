@@ -72,12 +72,13 @@ fun AppNavigation(
             )
         ) {
             TopicsScreen(
-                onNavigateBack = {
-                    navController.popBackStack()
-                },
+                onNavigateBack = { navController.popBackStack() },
+
+                // ВАЖНО: Теперь мы идем не в Lecture, а в LecturesList!
                 onNavigateToLecture = { topicId ->
-                    navController.navigate(Screen.Lecture.createRoute(topicId))
+                    navController.navigate(Screen.LecturesList.createRoute(topicId))
                 },
+
                 onNavigateToTest = { topicId ->
                     navController.navigate(Screen.Test.createRoute(topicId))
                 }
@@ -153,6 +154,20 @@ fun AppNavigation(
         composable(Screen.Leaderboard.route) {
             com.example.lawnavigator.presentation.leaderboard.LeaderboardScreen(
                 onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // --- НОВЫЙ БЛОК: Список лекций ---
+        composable(
+            route = Screen.LecturesList.route,
+            arguments = listOf(navArgument("topicId") { type = NavType.IntType })
+        ) {
+            com.example.lawnavigator.presentation.lectures_list.LecturesListScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToLecture = { lectureId ->
+                    // А вот отсюда уже идем читать конкретную лекцию
+                    navController.navigate(Screen.Lecture.createRoute(lectureId))
+                }
             )
         }
     }
