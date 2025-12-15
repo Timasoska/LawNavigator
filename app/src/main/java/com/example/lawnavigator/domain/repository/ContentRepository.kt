@@ -5,6 +5,7 @@ import com.example.lawnavigator.data.dto.TestResultDto
 import com.example.lawnavigator.domain.model.Discipline
 import com.example.lawnavigator.domain.model.LeaderboardUser
 import com.example.lawnavigator.domain.model.Lecture
+import com.example.lawnavigator.domain.model.LectureProgress
 import com.example.lawnavigator.domain.model.TestContent
 import com.example.lawnavigator.domain.model.TestResult
 import com.example.lawnavigator.domain.model.Topic
@@ -21,6 +22,9 @@ interface ContentRepository {
     suspend fun addToFavorites(lectureId: Int): Result<Unit>
     suspend fun removeFromFavorites(lectureId: Int): Result<Unit>
     suspend fun getLeaderboard(): Result<List<LeaderboardUser>>
+
+    suspend fun getLectureProgress(lectureId: Int): Result<LectureProgress>
+    suspend fun saveLectureProgress(lectureId: Int, progress: LectureProgress): Result<Unit>
 
 }
 

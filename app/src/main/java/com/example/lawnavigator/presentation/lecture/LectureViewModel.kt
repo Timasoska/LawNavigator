@@ -27,6 +27,7 @@ class LectureViewModel @Inject constructor(
         when (event) {
             is LectureContract.Event.OnBackClicked -> setEffect { LectureContract.Effect.NavigateBack }
             is LectureContract.Event.OnFavoriteClicked -> toggleFavorite()
+            is LectureContract.Event.OnSaveProgress -> saveProgress(event.scrollIndex)
         }
     }
 
@@ -35,12 +36,18 @@ class LectureViewModel @Inject constructor(
         viewModelScope.launch {
             lectureUseCase.getLecture(lectureId)
                 .onSuccess { lecture ->
+                    // Загружаем прогресс (Domain Model)
+                    val progressResult = lectureUseCase.getProgress(lectureId)
+
+                    // Извлекаем scrollIndex из модели. Если ошибка/пусто - 0.
+                    val progressIndex = progressResult.map { it.scrollIndex }.getOrDefault(0)
+
                     setState {
                         copy(
                             isLoading = false,
                             lecture = lecture,
-                            // ВАЖНО: Синхронизируем состояние кнопки с данными лекции
-                            isFavorite = lecture.isFavorite
+                            isFavorite = lecture.isFavorite,
+                            initialScrollIndex = progressIndex
                         )
                     }
                 }
@@ -48,6 +55,14 @@ class LectureViewModel @Inject constructor(
                     setState { copy(isLoading = false) }
                     setEffect { LectureContract.Effect.ShowMessage("Ошибка загрузки") }
                 }
+        }
+    }
+
+    private fun saveProgress(index: Int) {
+        if (index <= 0) return
+        viewModelScope.launch {
+            // UseCase сам создаст LectureProgress внутри
+            lectureUseCase.saveProgress(lectureId, index)
         }
     }
 

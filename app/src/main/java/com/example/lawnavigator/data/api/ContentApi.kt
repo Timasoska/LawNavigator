@@ -3,11 +3,13 @@ package com.example.lawnavigator.data.api
 import com.example.lawnavigator.data.dto.DisciplineDto
 import com.example.lawnavigator.data.dto.LeaderboardItemDto
 import com.example.lawnavigator.data.dto.LectureDto
+import com.example.lawnavigator.data.dto.LectureProgressDto
 import com.example.lawnavigator.data.dto.ProgressDto
 import com.example.lawnavigator.data.dto.SubmitAnswerRequest
 import com.example.lawnavigator.data.dto.TestDto
 import com.example.lawnavigator.data.dto.TestResultDto
 import com.example.lawnavigator.data.dto.TopicDto
+import com.example.lawnavigator.data.dto.UpdateProgressRequest
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -17,6 +19,20 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ContentApi {
+
+    // --- ЗАКЛАДКИ ---
+    @GET("api/lectures/{id}/progress")
+    suspend fun getLectureProgress(
+        @Header("Authorization") token: String,
+        @Path("id") lectureId: Int
+    ): LectureProgressDto // Может вернуть 204 (null body), обработаем в репозитории
+
+    @POST("api/lectures/{id}/progress")
+    suspend fun saveLectureProgress(
+        @Header("Authorization") token: String,
+        @Path("id") lectureId: Int,
+        @Body request: UpdateProgressRequest
+    )
 
     @GET("api/favorites")
     suspend fun getFavorites(

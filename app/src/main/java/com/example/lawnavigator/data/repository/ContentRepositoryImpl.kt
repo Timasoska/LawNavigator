@@ -3,11 +3,13 @@ package com.example.lawnavigator.data.repository
 import com.example.lawnavigator.data.api.ContentApi
 import com.example.lawnavigator.data.dto.SubmitAnswerRequest
 import com.example.lawnavigator.data.dto.TestResultDto
+import com.example.lawnavigator.data.dto.UpdateProgressRequest
 import com.example.lawnavigator.data.local.TokenManager
 import com.example.lawnavigator.domain.model.Answer
 import com.example.lawnavigator.domain.model.Discipline
 import com.example.lawnavigator.domain.model.LeaderboardUser
 import com.example.lawnavigator.domain.model.Lecture
+import com.example.lawnavigator.domain.model.LectureProgress
 import com.example.lawnavigator.domain.model.Question
 import com.example.lawnavigator.domain.model.TestContent
 import com.example.lawnavigator.domain.model.TestResult
@@ -187,11 +189,45 @@ class ContentRepositoryImpl @Inject constructor(
     override suspend fun submitTest(testId: Int, answers: List<SubmitAnswerRequest>): Result<TestResultDto> {
         return try {
             val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
-
             // Просто передаем список в API
             val result = api.submitTest("Bearer $token", testId, answers)
-
             Result.success(result)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getLectureProgress(lectureId: Int): Result<LectureProgress> {
+        return try {
+            val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
+
+            // Получаем DTO
+            val dto = api.getLectureProgress("Bearer $token", lectureId)
+
+            // Маппинг: DTO -> Domain
+            val domainModel = LectureProgress(
+                scrollIndex = dto.progressIndex,
+                quote = dto.quote
+            )
+            Result.success(domainModel)
+        } catch (e: Exception) {
+            // Если ошибка (например, нет прогресса), возвращаем пустую модель (скролл 0)
+            Result.success(LectureProgress(scrollIndex = 0))
+        }
+    }
+
+    override suspend fun saveLectureProgress(lectureId: Int, progress: LectureProgress): Result<Unit> {
+        return try {
+            val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
+
+            // Маппинг: Domain -> Request DTO
+            val request = UpdateProgressRequest(
+                progressIndex = progress.scrollIndex,
+                quote = progress.quote
+            )
+
+            api.saveLectureProgress("Bearer $token", lectureId, request)
+            Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }

@@ -9,12 +9,14 @@ class LectureContract {
     data class State(
         val lecture: Lecture? = null,
         val isLoading: Boolean = false,
-        val isFavorite: Boolean = false // Локальное состояние кнопки
+        val isFavorite: Boolean = false, // Локальное состояние кнопки
+        val initialScrollIndex: Int = 0 // <--- Позиция для авто-скролла
     ) : ViewState
 
     sealed class Event : ViewIntent {
         data object OnBackClicked : Event()
         data object OnFavoriteClicked : Event()
+        data class OnSaveProgress(val scrollIndex: Int) : Event()
     }
 
     sealed class Effect : ViewSideEffect {

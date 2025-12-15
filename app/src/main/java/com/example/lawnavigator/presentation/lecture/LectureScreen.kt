@@ -1,6 +1,7 @@
 package com.example.lawnavigator.presentation.lecture
 
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -30,6 +31,43 @@ fun LectureScreen(
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
 
+    // 1. Состояние скролла
+    val scrollState = rememberScrollState()
+
+    // АНИМИРОВАННЫЙ АВТО-СКРОЛЛ
+    LaunchedEffect(state.initialScrollIndex) {
+        if (state.initialScrollIndex > 0) {
+            // 1. Ждем, пока Markdown отрендерится и займет высоту
+            // Без задержки скролл может не сработать, если контент еще не появился
+            kotlinx.coroutines.delay(600)
+
+            // 2. Показываем уведомление
+            Toast.makeText(context, "Возвращаемся к месту чтения... 📖", Toast.LENGTH_SHORT).show()
+
+            // 3. Плавная прокрутка
+            scrollState.animateScrollTo(
+                value = state.initialScrollIndex,
+                animationSpec = androidx.compose.animation.core.tween(
+                    durationMillis = 500, // 0.5 секунды
+                    easing = androidx.compose.animation.core.FastOutSlowInEasing
+                )
+            )
+        }
+    }
+
+    // 3. Функция сохранения и выхода
+    fun saveAndExit() {
+        // Отправляем текущую позицию во ViewModel
+        viewModel.setEvent(LectureContract.Event.OnSaveProgress(scrollState.value))
+        // Инициируем выход
+        viewModel.setEvent(LectureContract.Event.OnBackClicked)
+    }
+
+    // Перехват системной кнопки "Назад" (на телефоне)
+    BackHandler {
+        saveAndExit()
+    }
+
     LaunchedEffect(true) {
         viewModel.effect.collectLatest { effect ->
             when (effect) {
@@ -42,9 +80,10 @@ fun LectureScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(state.lecture?.title ?: "Лекция") },
+                title = { Text(state.lecture?.title ?: "Лекция", maxLines = 1) },
                 navigationIcon = {
-                    IconButton(onClick = { viewModel.setEvent(LectureContract.Event.OnBackClicked) }) {
+                    // Кнопка "Назад" в AppBar тоже сохраняет прогресс
+                    IconButton(onClick = { saveAndExit() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
@@ -67,20 +106,24 @@ fun LectureScreen(
                 state.lecture?.let { lecture ->
                     Column(
                         modifier = Modifier
-                            .padding(16.dp)
-                            .verticalScroll(rememberScrollState())
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp)
+                            .verticalScroll(scrollState) // <--- Привязываем скролл
                     ) {
-                        // Заголовок оставляем обычным текстом (или тоже можно в MD)
+                        Spacer(modifier = Modifier.height(16.dp))
+
                         Text(text = lecture.title, style = MaterialTheme.typography.headlineSmall)
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // ВМЕСТО ОБЫЧНОГО Text:
                         MarkdownText(
                             markdown = lecture.content,
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurface
                         )
+
+                        // Добавляем отступ снизу, чтобы было удобно читать конец
+                        Spacer(modifier = Modifier.height(100.dp))
                     }
                 }
             }
