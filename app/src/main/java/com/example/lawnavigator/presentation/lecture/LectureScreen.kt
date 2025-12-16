@@ -7,18 +7,22 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import dev.jeziellago.compose.markdowntext.MarkdownText
 
@@ -26,46 +30,52 @@ import dev.jeziellago.compose.markdowntext.MarkdownText
 @Composable
 fun LectureScreen(
     viewModel: LectureViewModel = hiltViewModel(),
+    searchQuery: String?,
     onNavigateBack: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
-
-    // 1. Состояние скролла
     val scrollState = rememberScrollState()
 
-    // АНИМИРОВАННЫЙ АВТО-СКРОЛЛ
-    LaunchedEffect(state.initialScrollIndex) {
-        if (state.initialScrollIndex > 0) {
-            // 1. Ждем, пока Markdown отрендерится и займет высоту
-            // Без задержки скролл может не сработать, если контент еще не появился
-            kotlinx.coroutines.delay(600)
+    var isHighlightVisible by remember { mutableStateOf(false) }
+    var hasScrolledToSearchQuery by remember { mutableStateOf(false) }
 
-            // 2. Показываем уведомление
-            Toast.makeText(context, "Возвращаемся к месту чтения... 📖", Toast.LENGTH_SHORT).show()
+    // АВТО-СКРОЛЛ И ПОДСВЕТКА
+    LaunchedEffect(state.initialScrollIndex, searchQuery, state.lecture) {
+        val currentLecture = state.lecture
+        if (currentLecture != null && (state.initialScrollIndex > 0 || (searchQuery != null && !hasScrolledToSearchQuery))) {
+            if (searchQuery != null) isHighlightVisible = true
+            delay(600)
+            val targetScrollPosition = if (state.initialScrollIndex > 0) state.initialScrollIndex
+            else if (searchQuery != null && !hasScrolledToSearchQuery) {
+                val index = currentLecture.content.lowercase().indexOf(searchQuery.lowercase())
+                if (index != -1) (index * 1.5).toInt() else 0
+            } else 0
 
-            // 3. Плавная прокрутка
-            scrollState.animateScrollTo(
-                value = state.initialScrollIndex,
-                animationSpec = androidx.compose.animation.core.tween(
-                    durationMillis = 500, // 0.5 секунды
-                    easing = androidx.compose.animation.core.FastOutSlowInEasing
-                )
-            )
+            if (targetScrollPosition > 0) {
+                scrollState.animateScrollTo(value = targetScrollPosition, animationSpec = androidx.compose.animation.core.tween(1500))
+                if (isHighlightVisible) { delay(2000); isHighlightVisible = false }
+                hasScrolledToSearchQuery = true
+            }
         }
     }
 
-    // 3. Функция сохранения и выхода
+    // Логика выхода
     fun saveAndExit() {
-        // Отправляем текущую позицию во ViewModel
-        viewModel.setEvent(LectureContract.Event.OnSaveProgress(scrollState.value))
-        // Инициируем выход
+        if (!state.isEditing) viewModel.setEvent(LectureContract.Event.OnSaveProgress(scrollState.value))
         viewModel.setEvent(LectureContract.Event.OnBackClicked)
     }
 
-    // Перехват системной кнопки "Назад" (на телефоне)
+    // УМНЫЙ BACK HANDLER
+    // 1. Если открыт диалог удаления -> закрываем диалог
+    // 2. Если режим редактирования -> отменяем редактирование
+    // 3. Иначе -> сохраняем позицию и выходим
     BackHandler {
-        saveAndExit()
+        when {
+            state.showDeleteDialog -> viewModel.setEvent(LectureContract.Event.OnDismissDeleteDialog)
+            state.isEditing -> viewModel.setEvent(LectureContract.Event.OnCancelEditClicked)
+            else -> saveAndExit()
+        }
     }
 
     LaunchedEffect(true) {
@@ -77,23 +87,60 @@ fun LectureScreen(
         }
     }
 
+    // ДИАЛОГ УДАЛЕНИЯ (Вынесли наверх для чистоты)
+    if (state.showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.setEvent(LectureContract.Event.OnDismissDeleteDialog) },
+            title = { Text("Удалить лекцию?") },
+            text = { Text("Это действие нельзя отменить. Лекция будет удалена навсегда.") },
+            confirmButton = {
+                TextButton(
+                    onClick = { viewModel.setEvent(LectureContract.Event.OnConfirmDelete) },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) { Text("Удалить") }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.setEvent(LectureContract.Event.OnDismissDeleteDialog) }) { Text("Отмена") }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(state.lecture?.title ?: "Лекция", maxLines = 1) },
+                title = { Text(if (state.isEditing) "Редактирование" else state.lecture?.title ?: "Лекция", maxLines = 1) },
                 navigationIcon = {
-                    // Кнопка "Назад" в AppBar тоже сохраняет прогресс
-                    IconButton(onClick = { saveAndExit() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    IconButton(onClick = {
+                        if (state.isEditing) viewModel.setEvent(LectureContract.Event.OnCancelEditClicked)
+                        else saveAndExit()
+                    }) {
+                        Icon(if (state.isEditing) Icons.Default.Close else Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
-                    IconButton(onClick = { viewModel.setEvent(LectureContract.Event.OnFavoriteClicked) }) {
-                        Icon(
-                            imageVector = if (state.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                            contentDescription = "Favorite",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                    if (state.isEditing) {
+                        // Кнопка СОХРАНИТЬ
+                        IconButton(onClick = { viewModel.setEvent(LectureContract.Event.OnSaveEditsClicked) }) {
+                            Icon(Icons.Default.Check, contentDescription = "Сохранить", tint = MaterialTheme.colorScheme.primary)
+                        }
+                    } else {
+                        // ДЛЯ УЧИТЕЛЯ
+                        if (state.isTeacher) {
+                            IconButton(onClick = { viewModel.setEvent(LectureContract.Event.OnEditClicked) }) {
+                                Icon(Icons.Default.Edit, contentDescription = "Редактировать")
+                            }
+                            IconButton(onClick = { viewModel.setEvent(LectureContract.Event.OnDeleteClicked) }) {
+                                Icon(Icons.Default.Delete, contentDescription = "Удалить", tint = MaterialTheme.colorScheme.error)
+                            }
+                        }
+                        // ЛАЙК
+                        IconButton(onClick = { viewModel.setEvent(LectureContract.Event.OnFavoriteClicked) }) {
+                            Icon(
+                                imageVector = if (state.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                contentDescription = "Favorite",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                 }
             )
@@ -103,30 +150,66 @@ fun LectureScreen(
             if (state.isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else {
-                state.lecture?.let { lecture ->
+
+                // === РЕЖИМ РЕДАКТИРОВАНИЯ ===
+                if (state.isEditing) {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(horizontal = 16.dp)
-                            .verticalScroll(scrollState) // <--- Привязываем скролл
+                            .padding(16.dp)
+                            .verticalScroll(rememberScrollState())
                     ) {
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Text(text = lecture.title, style = MaterialTheme.typography.headlineSmall)
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        MarkdownText(
-                            markdown = lecture.content,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface
+                        OutlinedTextField(
+                            value = state.editedTitle,
+                            onValueChange = { viewModel.setEvent(LectureContract.Event.OnTitleChanged(it)) },
+                            label = { Text("Заголовок") },
+                            modifier = Modifier.fillMaxWidth()
                         )
-
-                        // Добавляем отступ снизу, чтобы было удобно читать конец
+                        Spacer(modifier = Modifier.height(16.dp))
+                        OutlinedTextField(
+                            value = state.editedContent,
+                            onValueChange = { viewModel.setEvent(LectureContract.Event.OnContentChanged(it)) },
+                            label = { Text("Содержание (Markdown)") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(400.dp),
+                            textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Start)
+                        )
                         Spacer(modifier = Modifier.height(100.dp))
+                    }
+                }
+
+                // === РЕЖИМ ПРОСМОТРА ===
+                else {
+                    state.lecture?.let { lecture ->
+                        val contentToDisplay = remember(lecture.content, searchQuery, isHighlightVisible) {
+                            if (isHighlightVisible) simpleHighlight(lecture.content, searchQuery) else lecture.content
+                        }
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 16.dp)
+                                .verticalScroll(scrollState)
+                        ) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(text = lecture.title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.height(16.dp))
+                            MarkdownText(
+                                markdown = contentToDisplay,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(100.dp))
+                        }
                     }
                 }
             }
         }
     }
+}
+
+private fun simpleHighlight(markdown: String, query: String?): String {
+    if (query.isNullOrBlank()) return markdown
+    val escapedQuery = Regex.escape(query)
+    return markdown.replace(Regex(escapedQuery, RegexOption.IGNORE_CASE), "`$0`")
 }

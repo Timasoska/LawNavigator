@@ -29,6 +29,7 @@ kotlinxSerializationJson = "1.9.0"
 
 # DataStore
 datastorePreferences = "1.2.0"
+uiGraphics = "1.10.0"
 
 [libraries]
 compose-markdown = { group = "com.github.jeziellago", name = "compose-markdown", version.ref = "markdown" }
@@ -71,6 +72,7 @@ kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 
 # DataStore
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastorePreferences" }
+androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics", version.ref = "uiGraphics" }
 
 [plugins]
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

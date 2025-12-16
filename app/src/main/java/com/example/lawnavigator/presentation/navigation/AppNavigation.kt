@@ -100,7 +100,8 @@ fun AppNavigation(
             route = Screen.Lecture.route,
             arguments = listOf(navArgument("lectureId") { type = NavType.IntType })
         ) {
-            LectureScreen(
+            LectureScreen( //МОЖЕТ ОШИБКА ИСПРАВИТЬ !
+                searchQuery = null,
                 onNavigateBack = { navController.popBackStack() }
             )
         }

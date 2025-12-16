@@ -9,14 +9,38 @@ class LectureContract {
     data class State(
         val lecture: Lecture? = null,
         val isLoading: Boolean = false,
-        val isFavorite: Boolean = false, // Локальное состояние кнопки
-        val initialScrollIndex: Int = 0 // <--- Позиция для авто-скролла
+        val isFavorite: Boolean = false,
+        val initialScrollIndex: Int = 0,
+        val searchQuery: String? = null,
+
+        // --- ДЛЯ УЧИТЕЛЯ ---
+        val isTeacher: Boolean = false,
+
+        // Редактирование
+        val isEditing: Boolean = false,
+        val editedTitle: String = "",
+        val editedContent: String = "",
+
+        // Удаление
+        val showDeleteDialog: Boolean = false
     ) : ViewState
 
     sealed class Event : ViewIntent {
         data object OnBackClicked : Event()
         data object OnFavoriteClicked : Event()
         data class OnSaveProgress(val scrollIndex: Int) : Event()
+
+        // Редактирование
+        data object OnEditClicked : Event()
+        data object OnSaveEditsClicked : Event()
+        data object OnCancelEditClicked : Event()
+        data class OnTitleChanged(val newTitle: String) : Event()
+        data class OnContentChanged(val newContent: String) : Event()
+
+        // Удаление
+        data object OnDeleteClicked : Event()
+        data object OnConfirmDelete : Event()
+        data object OnDismissDeleteDialog : Event()
     }
 
     sealed class Effect : ViewSideEffect {

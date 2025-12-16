@@ -29,5 +29,10 @@ interface ContentRepository {
 
     suspend fun uploadDocx(topicId: Int, title: String, fileBytes: ByteArray): Result<Unit>
 
+    suspend fun updateLecture(id: Int, title: String, content: String): Result<Unit>
+
+    suspend fun deleteLecture(id: Int): Result<Unit>
+
+
 }
 

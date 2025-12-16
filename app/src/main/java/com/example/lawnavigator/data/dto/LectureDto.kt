@@ -10,3 +10,9 @@ data class LectureDto(
     val topicId: Int,
     val isFavorite: Boolean
 )
+
+@Serializable
+data class UpdateLectureRequestDto(
+    val title: String,
+    val content: String
+)

@@ -3,6 +3,7 @@ package com.example.lawnavigator.data.repository
 import com.example.lawnavigator.data.api.ContentApi
 import com.example.lawnavigator.data.dto.SubmitAnswerRequest
 import com.example.lawnavigator.data.dto.TestResultDto
+import com.example.lawnavigator.data.dto.UpdateLectureRequestDto
 import com.example.lawnavigator.data.dto.UpdateProgressRequest
 import com.example.lawnavigator.data.local.TokenManager
 import com.example.lawnavigator.domain.model.Answer
@@ -33,6 +34,27 @@ class ContentRepositoryImpl @Inject constructor(
     private val api: ContentApi,
     private val tokenManager: TokenManager
 ) : ContentRepository {
+
+    override suspend fun deleteLecture(id: Int): Result<Unit> {
+        return try {
+            val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
+            api.deleteLecture("Bearer $token", id)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun updateLecture(id: Int, title: String, content: String): Result<Unit> {
+        return try {
+            val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
+            val request = UpdateLectureRequestDto(title, content)
+            api.updateLecture("Bearer $token", id, request)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 
     override suspend fun getLeaderboard(): Result<List<LeaderboardUser>> {
         return try {
