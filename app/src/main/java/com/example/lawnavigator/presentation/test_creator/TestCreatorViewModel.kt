@@ -5,6 +5,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.example.lawnavigator.core.mvi.BaseViewModel
 import com.example.lawnavigator.domain.model.TestDraft
+import com.example.lawnavigator.domain.usecase.GetAdminTestUseCase
 import com.example.lawnavigator.domain.usecase.SaveTestUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -13,14 +14,37 @@ import javax.inject.Inject
 @HiltViewModel
 class TestCreatorViewModel @Inject constructor(
     private val saveTestUseCase: SaveTestUseCase,
+    private val getAdminTestUseCase: GetAdminTestUseCase, // <--- Инжект
     savedStateHandle: SavedStateHandle
 ) : BaseViewModel<TestCreatorContract.State, TestCreatorContract.Event, TestCreatorContract.Effect>() {
 
     private val topicId: Int = savedStateHandle.get<Int>("topicId") ?: 0
+    private var existingDraft: TestDraft? = null // Храним загруженный драфт
 
     init {
-        // ДОБАВЬ ЭТОТ ЛОГ
-        android.util.Log.e("TestCreatorVM", "ViewModel Init. TopicId from handle: $topicId")
+        checkExistingTest()
+    }
+
+    private fun checkExistingTest() {
+        setState { copy(isLoading = true) }
+        viewModelScope.launch {
+            getAdminTestUseCase(topicId)
+                .onSuccess { draft ->
+                    if (draft != null) {
+                        // Сохраняем во временную переменную, чтобы потом восстановить
+                        existingDraft = draft
+                        // Показываем диалог
+                        setState { copy(isLoading = false, showFoundTestDialog = true) }
+                    } else {
+                        // Теста нет -> Можно создавать новый
+                        setState { copy(isLoading = false) }
+                    }
+                }
+                .onFailure {
+                    setState { copy(isLoading = false) }
+                    // Ошибку можно игнорировать и просто дать создать новый
+                }
+        }
     }
 
     override fun createInitialState(): TestCreatorContract.State {
@@ -37,6 +61,20 @@ class TestCreatorViewModel @Inject constructor(
 
     override fun handleEvent(event: TestCreatorContract.Event) {
         when (event) {
+            is TestCreatorContract.Event.OnLoadExistingTest -> {
+                existingDraft?.let { draft ->
+                    setState {
+                        copy(
+                            testDraft = draft,
+                            showFoundTestDialog = false
+                        )
+                    }
+                }
+            }
+            is TestCreatorContract.Event.OnCreateNewTest -> {
+                // Просто закрываем диалог, у нас уже пустой черновик
+                setState { copy(showFoundTestDialog = false) }
+            }
             is TestCreatorContract.Event.OnBackClicked -> setEffect { TestCreatorContract.Effect.NavigateBack }
             is TestCreatorContract.Event.OnSaveTestClicked -> saveTest()
 

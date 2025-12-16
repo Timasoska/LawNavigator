@@ -34,7 +34,7 @@ interface ContentRepository {
 
     suspend fun deleteLecture(id: Int): Result<Unit>
     suspend fun saveTest(testDraft: TestDraft): Result<Unit>
-
+    suspend fun getAdminTest(topicId: Int): Result<TestDraft?>
 
 }
 

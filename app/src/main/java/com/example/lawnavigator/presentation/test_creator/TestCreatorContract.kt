@@ -11,10 +11,10 @@ class TestCreatorContract {
         val isLoading: Boolean = false,
         // Черновик теста
         val testDraft: TestDraft,
-
         // Управление диалогом вопроса
         val isQuestionDialogOpen: Boolean = false,
-        val editingQuestion: QuestionDraft? = null // Если null - создаем новый, иначе редактируем
+        val editingQuestion: QuestionDraft? = null, // Если null - создаем новый, иначе редактируем
+        val showFoundTestDialog: Boolean = false // Показывать ли диалог "Редактировать?"
     ) : ViewState
 
     sealed class Event : ViewIntent {
@@ -33,6 +33,9 @@ class TestCreatorContract {
         // Событие из диалога (Сохранить вопрос в список)
         data class OnSaveQuestion(val question: QuestionDraft) : Event()
         data object OnCloseDialog : Event()
+
+        data object OnLoadExistingTest : Event() // "Редактировать"
+        data object OnCreateNewTest : Event()    // "Создать с нуля"
     }
 
     sealed class Effect : ViewSideEffect {

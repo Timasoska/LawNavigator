@@ -71,6 +71,23 @@ fun TestCreatorScreen(
             }
         }
     ) { padding ->
+        if (state.showFoundTestDialog) {
+            AlertDialog(
+                onDismissRequest = { /* Не даем закрыть просто так, нужно выбрать */ },
+                title = { Text("Тест уже существует") },
+                text = { Text("Для этой темы уже есть тест. Хотите отредактировать его или создать новый (старый будет удален)?") },
+                confirmButton = {
+                    Button(onClick = { viewModel.setEvent(TestCreatorContract.Event.OnLoadExistingTest) }) {
+                        Text("Редактировать")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.setEvent(TestCreatorContract.Event.OnCreateNewTest) }) {
+                        Text("Новый (сбросить)")
+                    }
+                }
+            )
+        }
         if (state.isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()

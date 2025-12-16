@@ -1,5 +1,6 @@
 package com.example.lawnavigator.data.api
 
+import com.example.lawnavigator.data.dto.AdminTestResponseDto
 import com.example.lawnavigator.data.dto.DisciplineDto
 import com.example.lawnavigator.data.dto.LeaderboardItemDto
 import com.example.lawnavigator.data.dto.LectureDto
@@ -26,6 +27,11 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ContentApi {
+    @GET("api/admin/tests/{topicId}")
+    suspend fun getAdminTest(
+        @Header("Authorization") token: String,
+        @Path("topicId") topicId: Int
+    ): AdminTestResponseDto? // Может вернуть null/204, Retrofit обработает
 
     @POST("api/admin/tests")
     suspend fun saveTest(

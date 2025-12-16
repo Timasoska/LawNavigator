@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
 data class SaveTestRequestDto(
     val topicId: Int,
     val title: String,
-    val timeLimit: Int, // В секундах
+    val timeLimit: Int,
     val questions: List<SaveQuestionRequestDto>
 )
 
@@ -25,4 +25,16 @@ data class SaveQuestionRequestDto(
 data class SaveAnswerRequestDto(
     val text: String,
     val isCorrect: Boolean
+)
+
+/**
+ * DTO для получения теста для редактирования (Ответ сервера)
+ */
+@Serializable
+data class AdminTestResponseDto(
+    val id: Int,
+    val topicId: Int, // <--- УБЕДИСЬ, ЧТО ЭТА СТРОКА ЕСТЬ
+    val title: String,
+    val timeLimit: Int,
+    val questions: List<SaveQuestionRequestDto>
 )
