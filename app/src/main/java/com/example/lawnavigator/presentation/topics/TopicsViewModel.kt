@@ -3,14 +3,17 @@ package com.example.lawnavigator.presentation.topics
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.example.lawnavigator.core.mvi.BaseViewModel
+import com.example.lawnavigator.data.local.TokenManager
 import com.example.lawnavigator.domain.usecase.GetTopicsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class TopicsViewModel @Inject constructor(
     private val getTopicsUseCase: GetTopicsUseCase,
+    private val tokenManager: TokenManager, // <--- ИНЖЕКТ
     savedStateHandle: SavedStateHandle // Сюда приходят аргументы навигации
 ) : BaseViewModel<TopicsContract.State, TopicsContract.Event, TopicsContract.Effect>() {
 
@@ -20,14 +23,25 @@ class TopicsViewModel @Inject constructor(
     override fun createInitialState() = TopicsContract.State()
 
     init {
+        checkRole() // <--- Проверяем роль
         loadTopics()
+    }
+
+    private fun checkRole() {
+        viewModelScope.launch {
+            val role = tokenManager.role.first()
+            setState { copy(isTeacher = role == "teacher") }
+        }
     }
 
     override fun handleEvent(event: TopicsContract.Event) {
         when (event) {
             is TopicsContract.Event.OnBackClicked -> setEffect { TopicsContract.Effect.NavigateBack }
-            is TopicsContract.Event.OnTopicClicked -> setEffect { TopicsContract.Effect.NavigateToLecture(event.topicId) }
             is TopicsContract.Event.OnRetryClicked -> loadTopics() // <--- Добавь обработку
+            // Клик по теме -> Список лекций (мы это меняли в прошлый раз)
+            is TopicsContract.Event.OnTopicClicked -> setEffect { TopicsContract.Effect.NavigateToLecture(event.topicId) }
+            // Клик по "Создать тест"
+            is TopicsContract.Event.OnCreateTestClicked -> setEffect { TopicsContract.Effect.NavigateToTestCreator(event.topicId) } // Передаем ID
         }
     }
 

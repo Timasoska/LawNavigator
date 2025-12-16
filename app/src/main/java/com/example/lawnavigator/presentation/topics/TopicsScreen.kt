@@ -2,12 +2,14 @@ package com.example.lawnavigator.presentation.topics
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -44,17 +46,19 @@ import kotlinx.coroutines.flow.collectLatest
 fun TopicsScreen(
     viewModel: TopicsViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit,
-    onNavigateToLecture: (Int) -> Unit,
-    onNavigateToTest: (Int) -> Unit // <--- Новый колбэк (принимает topicId)
+    onNavigateToLecture: (Int) -> Unit, // Это ведет на список лекций
+    onNavigateToTest: (Int) -> Unit,
+    onNavigateToCreateTest: (Int) -> Unit // <--- Новый колбэк
 ) {
     val state by viewModel.state.collectAsState()
 
-    // Обработка эффектов (навигация)
     LaunchedEffect(true) {
         viewModel.effect.collectLatest { effect ->
             when (effect) {
                 is TopicsContract.Effect.NavigateBack -> onNavigateBack()
                 is TopicsContract.Effect.NavigateToLecture -> onNavigateToLecture(effect.topicId)
+                // Обработка перехода в конструктор
+                is TopicsContract.Effect.NavigateToTestCreator -> onNavigateToCreateTest(effect.topicId) // Вызываем навигацию с ID
             }
         }
     }
@@ -64,12 +68,8 @@ fun TopicsScreen(
             TopAppBar(
                 title = { Text("Темы") },
                 navigationIcon = {
-                    // Кнопка Назад
                     IconButton(onClick = { viewModel.setEvent(TopicsContract.Event.OnBackClicked) }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Назад"
-                        )
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
                     }
                 }
             )
@@ -77,10 +77,8 @@ fun TopicsScreen(
     ) { padding ->
         Box(modifier = Modifier.padding(padding).fillMaxSize()) {
             when {
-                // 1. Загрузка
                 state.isLoading -> LoadingScreen()
 
-                // 2. Ошибка
                 state.error != null -> {
                     ErrorScreen(
                         message = state.error ?: "Ошибка загрузки тем",
@@ -88,28 +86,39 @@ fun TopicsScreen(
                     )
                 }
 
-                // 3. Пусто
                 state.topics.isEmpty() -> {
                     EmptyScreen(message = "В этой дисциплине пока нет тем")
                 }
 
-                // 4. Данные
                 else -> {
                     LazyColumn {
                         items(state.topics) { topic ->
                             ListItem(
-                                headlineContent = { Text(topic.name) },
-                                // По клику на саму строку -> Лекция
+                                headlineContent = {  Text("${topic.name} [ID: ${topic.id}]")  },
                                 modifier = Modifier.clickable {
                                     viewModel.setEvent(TopicsContract.Event.OnTopicClicked(topic.id))
                                 },
-                                // Иконка справа -> Тест
                                 trailingContent = {
-                                    IconButton(onClick = { onNavigateToTest(topic.id) }) {
-                                        Icon(
-                                            imageVector = Icons.Default.PlayArrow,
-                                            contentDescription = "Пройти тест"
-                                        )
+                                    Row {
+                                        // 1. Кнопка "Конструктор" (ТОЛЬКО ДЛЯ УЧИТЕЛЯ)
+                                        if (state.isTeacher) {
+                                            IconButton(onClick = {
+                                                viewModel.setEvent(TopicsContract.Event.OnCreateTestClicked(topic.id))
+                                            }) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Build,
+                                                    contentDescription = "Редактировать тест"
+                                                )
+                                            }
+                                        }
+
+                                        // 2. Кнопка "Пройти тест" (Для всех)
+                                        IconButton(onClick = { onNavigateToTest(topic.id) }) {
+                                            Icon(
+                                                imageVector = Icons.Default.PlayArrow,
+                                                contentDescription = "Пройти тест"
+                                            )
+                                        }
                                     }
                                 },
                                 shadowElevation = 2.dp

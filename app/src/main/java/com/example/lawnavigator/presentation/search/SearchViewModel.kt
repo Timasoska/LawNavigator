@@ -25,7 +25,7 @@ class SearchViewModel @Inject constructor(
                 performSearch(event.query)
             }
             is SearchContract.Event.OnLectureClicked -> {
-                setEffect { SearchContract.Effect.NavigateToLecture(event.lectureId) }
+                setEffect { SearchContract.Effect.NavigateToLecture(event.lectureId, currentState.query) }
             }
             is SearchContract.Event.OnBackClicked -> {
                 setEffect { SearchContract.Effect.NavigateBack }

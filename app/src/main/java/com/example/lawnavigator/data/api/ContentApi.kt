@@ -5,6 +5,7 @@ import com.example.lawnavigator.data.dto.LeaderboardItemDto
 import com.example.lawnavigator.data.dto.LectureDto
 import com.example.lawnavigator.data.dto.LectureProgressDto
 import com.example.lawnavigator.data.dto.ProgressDto
+import com.example.lawnavigator.data.dto.SaveTestRequestDto
 import com.example.lawnavigator.data.dto.SubmitAnswerRequest
 import com.example.lawnavigator.data.dto.TestDto
 import com.example.lawnavigator.data.dto.TestResultDto
@@ -25,6 +26,12 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ContentApi {
+
+    @POST("api/admin/tests")
+    suspend fun saveTest(
+        @Header("Authorization") token: String,
+        @Body request: SaveTestRequestDto
+    )
 
     @DELETE("api/admin/lectures/{id}")
     suspend fun deleteLecture(

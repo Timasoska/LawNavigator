@@ -19,7 +19,7 @@ class SearchContract {
     }
 
     sealed class Effect : ViewSideEffect {
-        data class NavigateToLecture(val lectureId: Int) : Effect()
+        data class NavigateToLecture(val lectureId: Int, val query: String) : Effect()
         data object NavigateBack : Effect()
     }
 }

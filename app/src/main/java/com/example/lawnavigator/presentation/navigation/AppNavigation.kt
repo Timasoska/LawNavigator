@@ -81,6 +81,10 @@ fun AppNavigation(
 
                 onNavigateToTest = { topicId ->
                     navController.navigate(Screen.Test.createRoute(topicId))
+                },
+
+                onNavigateToCreateTest = { topicId ->
+                    navController.navigate(Screen.TestCreator.createRoute(topicId))
                 }
             )
         }
@@ -98,10 +102,21 @@ fun AppNavigation(
         // Lecture
         composable(
             route = Screen.Lecture.route,
-            arguments = listOf(navArgument("lectureId") { type = NavType.IntType })
-        ) {
-            LectureScreen( //МОЖЕТ ОШИБКА ИСПРАВИТЬ !
-                searchQuery = null,
+            arguments = listOf(
+                navArgument("lectureId") { type = NavType.IntType },
+                // Добавляем аргумент для поиска
+                navArgument("searchQuery") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            // Получаем значение аргумента
+            val queryArgument = backStackEntry.arguments?.getString("searchQuery")
+
+            LectureScreen(
+                searchQuery = queryArgument, // <--- ТЕПЕРЬ ПЕРЕДАЕМ РЕАЛЬНОЕ ЗНАЧЕНИЕ
                 onNavigateBack = { navController.popBackStack() }
             )
         }
@@ -131,10 +146,10 @@ fun AppNavigation(
         composable(Screen.Search.route) {
             com.example.lawnavigator.presentation.search.SearchScreen(
                 onNavigateBack = {
-                    navController.popBackStack() // Возвращаемся назад
+                    navController.popBackStack()
                 },
+                // Теперь здесь (Int, String) -> Unit, как и ожидает SearchScreen
                 onNavigateToLecture = { lectureId ->
-                    // Переходим к чтению найденной лекции
                     navController.navigate(Screen.Lecture.createRoute(lectureId))
                 }
             )
@@ -168,6 +183,41 @@ fun AppNavigation(
                 onNavigateToLecture = { lectureId ->
                     // А вот отсюда уже идем читать конкретную лекцию
                     navController.navigate(Screen.Lecture.createRoute(lectureId))
+                }
+            )
+        }
+
+        composable(
+            route = Screen.TestCreator.route,
+            arguments = listOf(navArgument("topicId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val topicId = backStackEntry.arguments?.getInt("topicId") ?: 0
+            android.util.Log.d("NavDebug", "Navigating to TestCreator with ID: $topicId")
+            // Hilt сам возьмет аргумент из SavedStateHandle.
+            // Нам нужно просто вызвать экран.
+
+            com.example.lawnavigator.presentation.test_creator.TestCreatorScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Screen.Topics.route,
+            arguments = listOf(
+                navArgument("disciplineId") { type = NavType.IntType }
+            )
+        ) {
+            TopicsScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToLecture = { topicId ->
+                    navController.navigate(Screen.LecturesList.createRoute(topicId))
+                },
+                onNavigateToTest = { topicId ->
+                    navController.navigate(Screen.Test.createRoute(topicId))
+                },
+                // Прокидываем навигацию в конструктор
+                onNavigateToCreateTest = { topicId ->
+                    navController.navigate(Screen.TestCreator.createRoute(topicId)) // Создаем маршрут с ID
                 }
             )
         }

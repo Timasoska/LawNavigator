@@ -10,17 +10,24 @@ class TopicsContract {
     data class State(
         val topics: List<Topic> = emptyList(),
         val isLoading: Boolean = false,
-        val error: String? = null
+        val error: String? = null,
+        val isTeacher: Boolean = false // <--- НОВОЕ ПОЛЕ
     ) : ViewState
 
     sealed class Event : ViewIntent {
         data object OnBackClicked : Event()
+        data object OnRetryClicked : Event()
         data class OnTopicClicked(val topicId: Int) : Event()
-        data object OnRetryClicked : Event() // <--- Добавь это
+
+        // <--- НОВОЕ СОБЫТИЕ: Нажали "Создать тест"
+        data class OnCreateTestClicked(val topicId: Int) : Event()
     }
 
     sealed class Effect : ViewSideEffect {
         data object NavigateBack : Effect()
         data class NavigateToLecture(val topicId: Int) : Effect()
+
+        // <--- НОВЫЙ ЭФФЕКТ: Переход в конструктор
+        data class NavigateToTestCreator(val topicId: Int) : Effect()
     }
 }

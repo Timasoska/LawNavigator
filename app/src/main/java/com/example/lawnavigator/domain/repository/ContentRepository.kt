@@ -7,6 +7,7 @@ import com.example.lawnavigator.domain.model.LeaderboardUser
 import com.example.lawnavigator.domain.model.Lecture
 import com.example.lawnavigator.domain.model.LectureProgress
 import com.example.lawnavigator.domain.model.TestContent
+import com.example.lawnavigator.domain.model.TestDraft
 import com.example.lawnavigator.domain.model.TestResult
 import com.example.lawnavigator.domain.model.Topic
 
@@ -32,6 +33,7 @@ interface ContentRepository {
     suspend fun updateLecture(id: Int, title: String, content: String): Result<Unit>
 
     suspend fun deleteLecture(id: Int): Result<Unit>
+    suspend fun saveTest(testDraft: TestDraft): Result<Unit>
 
 
 }

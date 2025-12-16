@@ -22,7 +22,7 @@ import kotlinx.coroutines.flow.collectLatest
 fun SearchScreen(
     viewModel: SearchViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit,
-    onNavigateToLecture: (Int) -> Unit
+    onNavigateToLecture: (Int) -> Unit // <--- Должно быть так (только Int)
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -30,6 +30,7 @@ fun SearchScreen(
         viewModel.effect.collectLatest { effect ->
             when (effect) {
                 is SearchContract.Effect.NavigateBack -> onNavigateBack()
+                // ИЗМЕНЕНИЕ: Передаем query из эффекта
                 is SearchContract.Effect.NavigateToLecture -> onNavigateToLecture(effect.lectureId)
             }
         }

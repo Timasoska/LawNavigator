@@ -1,6 +1,9 @@
 package com.example.lawnavigator.data.repository
 
 import com.example.lawnavigator.data.api.ContentApi
+import com.example.lawnavigator.data.dto.SaveAnswerRequestDto
+import com.example.lawnavigator.data.dto.SaveQuestionRequestDto
+import com.example.lawnavigator.data.dto.SaveTestRequestDto
 import com.example.lawnavigator.data.dto.SubmitAnswerRequest
 import com.example.lawnavigator.data.dto.TestResultDto
 import com.example.lawnavigator.data.dto.UpdateLectureRequestDto
@@ -13,6 +16,7 @@ import com.example.lawnavigator.domain.model.Lecture
 import com.example.lawnavigator.domain.model.LectureProgress
 import com.example.lawnavigator.domain.model.Question
 import com.example.lawnavigator.domain.model.TestContent
+import com.example.lawnavigator.domain.model.TestDraft
 import com.example.lawnavigator.domain.model.TestResult
 import com.example.lawnavigator.domain.model.Topic
 import com.example.lawnavigator.domain.repository.ContentRepository
@@ -34,6 +38,37 @@ class ContentRepositoryImpl @Inject constructor(
     private val api: ContentApi,
     private val tokenManager: TokenManager
 ) : ContentRepository {
+
+    override suspend fun saveTest(testDraft: TestDraft): Result<Unit> {
+        return try {
+            val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
+
+            // Маппинг TestDraft -> SaveTestRequestDto
+            val request = SaveTestRequestDto(
+                topicId = testDraft.topicId,
+                title = testDraft.title,
+                timeLimit = testDraft.timeLimitMinutes * 60, // Конвертируем минуты в секунды
+                questions = testDraft.questions.map { qDraft ->
+                    SaveQuestionRequestDto(
+                        text = qDraft.text,
+                        difficulty = qDraft.difficulty,
+                        isMultipleChoice = qDraft.isMultipleChoice,
+                        answers = qDraft.answers.map { aDraft ->
+                            SaveAnswerRequestDto(
+                                text = aDraft.text,
+                                isCorrect = aDraft.isCorrect
+                            )
+                        }
+                    )
+                }
+            )
+
+            api.saveTest("Bearer $token", request)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 
     override suspend fun deleteLecture(id: Int): Result<Unit> {
         return try {

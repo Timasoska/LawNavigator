@@ -28,4 +28,7 @@ sealed class Screen(val route: String) {
         fun createRoute(topicId: Int) = "lectures_list/$topicId"
     }
 
+    data object TestCreator : Screen("test_creator/{topicId}") {
+        fun createRoute(topicId: Int) = "test_creator/$topicId"
+    }
 }
