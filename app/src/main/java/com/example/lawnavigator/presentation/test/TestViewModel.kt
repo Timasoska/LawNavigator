@@ -17,10 +17,13 @@ import kotlinx.coroutines.isActive
 class TestViewModel @Inject constructor(
     private val testUseCase: TestUseCase,
     private val submitTestUseCase: SubmitTestUseCase,
+    private val getTestByLectureUseCase: com.example.lawnavigator.domain.usecase.GetTestByLectureUseCase,
     savedStateHandle: SavedStateHandle
 ) : BaseViewModel<TestContract.State, TestContract.Event, TestContract.Effect>() {
 
-    private val topicId: Int = checkNotNull(savedStateHandle["topicId"])
+    // Читаем аргументы
+    private val topicIdArg: Int = savedStateHandle["topicId"] ?: -1
+    private val lectureIdArg: Int = savedStateHandle["lectureId"] ?: -1
     private var timerJob: Job? = null
 
     override fun createInitialState() = TestContract.State()
@@ -37,7 +40,6 @@ class TestViewModel @Inject constructor(
             is TestContract.Event.OnReviewClicked -> {
                 setState { copy(isReviewMode = true, resultScore = null, currentQuestionIndex = 0) }
             }
-            // Таймер
             is TestContract.Event.OnTimerTick -> {
                 val current = currentState.timeLeft
                 if (current != null && current > 0) {
@@ -49,7 +51,7 @@ class TestViewModel @Inject constructor(
             }
             is TestContract.Event.OnTimeExpired -> {
                 stopTimer()
-                submitTest() // Автоматическая отправка
+                submitTest()
             }
         }
     }
@@ -93,20 +95,32 @@ class TestViewModel @Inject constructor(
     private fun loadTest() {
         setState { copy(isLoading = true) }
         viewModelScope.launch {
-            testUseCase.loadTest(topicId)
-                .onSuccess { test ->
-                    setState {
-                        copy(
-                            isLoading = false,
-                            test = test,
-                            timeLeft = if (test.timeLimit > 0) test.timeLimit else null
-                        )
-                    }
-                    if (test.timeLimit > 0) {
-                        startTimer()
-                    }
+            // Определяем, какой UseCase вызывать
+            val result = if (lectureIdArg != -1) {
+                // Если передан lectureId -> грузим тест лекции
+                getTestByLectureUseCase(lectureIdArg)
+            } else if (topicIdArg != -1) {
+                // Если передан topicId -> грузим тест темы
+                testUseCase.loadTest(topicIdArg)
+            } else {
+                Result.failure(Exception("No ID provided"))
+            }
+
+            result.onSuccess { test ->
+                setState {
+                    copy(
+                        isLoading = false,
+                        test = test,
+                        timeLeft = if (test.timeLimit > 0) test.timeLimit else null
+                    )
                 }
+                if (test.timeLimit > 0) {
+                    startTimer()
+                }
+            }
                 .onFailure { error ->
+                    // Логируем ошибку, чтобы видеть в Logcat
+                    android.util.Log.e("TestViewModel", "Error loading test: ${error.message}")
                     setState { copy(isLoading = false) }
                 }
         }

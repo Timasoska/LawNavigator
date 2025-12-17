@@ -5,5 +5,6 @@ data class Lecture(
     val title: String,
     val content: String,
     val topicId: Int,
-    val isFavorite: Boolean = false // Будем хранить состояние избранного в UI
+    val isFavorite: Boolean = false,
+    val hasTest: Boolean = false // <--- НОВОЕ ПОЛЕ
 )

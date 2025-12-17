@@ -31,7 +31,8 @@ import dev.jeziellago.compose.markdowntext.MarkdownText
 fun LectureScreen(
     viewModel: LectureViewModel = hiltViewModel(),
     searchQuery: String?,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onNavigateToTest: (Int) -> Unit // <--- НОВЫЙ КОЛБЭК
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
@@ -200,6 +201,20 @@ fun LectureScreen(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(modifier = Modifier.height(100.dp))
+
+                            if (lecture.hasTest && !state.isEditing) {
+                                Button(
+                                    onClick = { onNavigateToTest(lecture.id) }, // Здесь тоже lecture.id
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 16.dp)
+                                ) {
+                                    Icon(Icons.Default.Check, contentDescription = null)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Пройти тест по лекции")
+                                }
+                                Spacer(modifier = Modifier.height(48.dp))
+                            }
                         }
                     }
                 }

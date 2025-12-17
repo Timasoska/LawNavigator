@@ -7,7 +7,8 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class SaveTestRequestDto(
-    val topicId: Int,
+    val topicId: Int? = null,   // <--- СТАЛ Int?
+    val lectureId: Int? = null, // <--- НОВОЕ ПОЛЕ Int?
     val title: String,
     val timeLimit: Int,
     val questions: List<SaveQuestionRequestDto>
@@ -33,7 +34,8 @@ data class SaveAnswerRequestDto(
 @Serializable
 data class AdminTestResponseDto(
     val id: Int,
-    val topicId: Int, // <--- УБЕДИСЬ, ЧТО ЭТА СТРОКА ЕСТЬ
+    val topicId: Int?,   // <--- СТАЛ Int?
+    val lectureId: Int?, // <--- НОВОЕ ПОЛЕ Int?
     val title: String,
     val timeLimit: Int,
     val questions: List<SaveQuestionRequestDto>

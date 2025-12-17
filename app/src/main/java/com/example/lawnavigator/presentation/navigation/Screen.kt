@@ -14,8 +14,6 @@ sealed class Screen(val route: String) {
 
     data object Lecture : Screen("lecture/{lectureId}") { fun createRoute(id: Int) = "lecture/$id" }
 
-    data object Test : Screen("test/{topicId}") { fun createRoute(id: Int) = "test/$id" }
-
     data object Profile : Screen("profile")
 
     data object Search : Screen("search")
@@ -28,7 +26,18 @@ sealed class Screen(val route: String) {
         fun createRoute(topicId: Int) = "lectures_list/$topicId"
     }
 
-    data object TestCreator : Screen("test_creator/{topicId}") {
-        fun createRoute(topicId: Int) = "test_creator/$topicId"
+    data object Test : Screen("test?topicId={topicId}&lectureId={lectureId}") {
+        // Аргументы теперь nullable (Int?) и имеют значение по умолчанию null
+        fun createRoute(topicId: Int? = null, lectureId: Int? = null): String {
+            return if (topicId != null) "test?topicId=$topicId"
+            else "test?lectureId=$lectureId"
+        }
+    }
+
+    data object TestCreator : Screen("test_creator?topicId={topicId}&lectureId={lectureId}") {
+        fun createRoute(topicId: Int? = null, lectureId: Int? = null): String {
+            return if (topicId != null) "test_creator?topicId=$topicId"
+            else "test_creator?lectureId=$lectureId"
+        }
     }
 }

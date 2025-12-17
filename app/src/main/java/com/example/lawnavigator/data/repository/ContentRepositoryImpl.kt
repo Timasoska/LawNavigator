@@ -12,11 +12,74 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject
+import kotlin.collections.map
 
 class ContentRepositoryImpl @Inject constructor(
     private val api: ContentApi,
     private val tokenManager: TokenManager
 ) : ContentRepository {
+
+    override suspend fun getAdminTestByLecture(lectureId: Int): Result<TestDraft?> {
+        return try {
+            val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
+
+            val dto = try {
+                api.getAdminTestByLecture("Bearer $token", lectureId)
+            } catch (e: Exception) {
+                null
+            }
+
+            if (dto == null) return Result.success(null)
+
+            val draft = TestDraft(
+                topicId = dto.topicId,
+                lectureId = dto.lectureId,
+                id = dto.id,
+                title = dto.title,
+                timeLimitMinutes = dto.timeLimit / 60,
+                questions = dto.questions.map { q ->
+                    com.example.lawnavigator.domain.model.QuestionDraft(
+                        text = q.text,
+                        difficulty = q.difficulty,
+                        isMultipleChoice = q.isMultipleChoice,
+                        answers = q.answers.map { a ->
+                            com.example.lawnavigator.domain.model.AnswerDraft(
+                                text = a.text,
+                                isCorrect = a.isCorrect
+                            )
+                        }
+                    )
+                }
+            )
+            Result.success(draft)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getTestByLectureId(lectureId: Int): Result<TestContent> {
+        return try {
+            val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
+            val dto = api.getTestByLecture("Bearer $token", lectureId)
+
+            // Маппинг (копируем из getTest)
+            val domainTest = TestContent(
+                id = dto.id,
+                title = dto.title,
+                timeLimit = dto.timeLimit,
+                questions = dto.questions.map { q ->
+                    Question(
+                        id = q.id,
+                        text = q.text,
+                        difficulty = q.difficulty,
+                        isMultipleChoice = q.isMultipleChoice,
+                        answers = q.answers.map { a -> Answer(a.id, a.text) }
+                    )
+                }
+            )
+            Result.success(domainTest)
+        } catch (e: Exception) { Result.failure(e) }
+    }
 
     // --- АДМИНКА ТЕСТОВ (НОВОЕ) ---
 
@@ -37,6 +100,7 @@ class ContentRepositoryImpl @Inject constructor(
             // Маппинг DTO -> Domain Model
             val draft = TestDraft(
                 topicId = dto.topicId, // Теперь это поле есть в DTO
+                lectureId = dto.lectureId, // <--- Добавить
                 id = dto.id,
                 title = dto.title,
                 timeLimitMinutes = dto.timeLimit / 60,
@@ -67,7 +131,8 @@ class ContentRepositoryImpl @Inject constructor(
             val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
 
             val request = SaveTestRequestDto(
-                topicId = testDraft.topicId,
+                topicId = testDraft.topicId, // Теперь здесь может быть null, и это правильно!
+                lectureId = testDraft.lectureId, // <--- Теперь можно передать
                 title = testDraft.title,
                 timeLimit = testDraft.timeLimitMinutes * 60,
                 questions = testDraft.questions.map { qDraft ->
@@ -141,7 +206,12 @@ class ContentRepositoryImpl @Inject constructor(
         return try {
             val token = tokenManager.token.first() ?: return Result.failure(Exception("Not authorized"))
             val dtos = api.getDisciplines("Bearer $token")
-            val disciplines = dtos.map { Discipline(it.id, it.name, it.description) }
+
+            // ИСПРАВЛЕНИЕ: Используем "dto ->" вместо "it"
+            val disciplines = dtos.map { dto ->
+                Discipline(dto.id, dto.name, dto.description)
+            }
+
             Result.success(disciplines)
         } catch (e: Exception) { Result.failure(e) }
     }
@@ -159,7 +229,14 @@ class ContentRepositoryImpl @Inject constructor(
         return try {
             val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
             val dto = api.getLecture("Bearer $token", lectureId)
-            Result.success(Lecture(dto.id, dto.title, dto.content, dto.topicId, dto.isFavorite))
+            Result.success(Lecture(
+                id = dto.id,
+                title = dto.title,
+                content = dto.content,
+                topicId = dto.topicId,
+                isFavorite = dto.isFavorite,
+                hasTest = dto.hasTest // <--- МАППИНГ
+            ))
         } catch (e: Exception) { Result.failure(e) }
     }
 
@@ -220,9 +297,21 @@ class ContentRepositoryImpl @Inject constructor(
         return try {
             val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
             val dtos = api.getLecturesByTopic("Bearer $token", topicId)
-            val lectures = dtos.map { Lecture(it.id, it.title, it.content, it.topicId, it.isFavorite) }
+
+            val lectures = dtos.map {
+                Lecture(
+                    id = it.id,
+                    title = it.title,
+                    content = it.content,
+                    topicId = it.topicId,
+                    isFavorite = it.isFavorite,
+                    hasTest = it.hasTest // <--- ПРОВЕРЬ, ЕСТЬ ЛИ ЭТА СТРОКА?
+                )
+            }
             Result.success(lectures)
-        } catch (e: Exception) { Result.failure(e) }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     override suspend fun uploadDocx(topicId: Int, title: String, fileBytes: ByteArray): Result<Unit> {

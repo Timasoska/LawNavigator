@@ -11,14 +11,23 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+
 @HiltViewModel
 class TestCreatorViewModel @Inject constructor(
     private val saveTestUseCase: SaveTestUseCase,
-    private val getAdminTestUseCase: GetAdminTestUseCase, // <--- Инжект
+    private val getAdminTestUseCase: GetAdminTestUseCase,
     savedStateHandle: SavedStateHandle
 ) : BaseViewModel<TestCreatorContract.State, TestCreatorContract.Event, TestCreatorContract.Effect>() {
 
-    private val topicId: Int = savedStateHandle.get<Int>("topicId") ?: 0
+    // 1. Читаем оба аргумента. Если аргумента нет, вернется null, поэтому используем эвис ?: -1
+    private val topicIdArg: Int = savedStateHandle["topicId"] ?: -1
+    private val lectureIdArg: Int = savedStateHandle["lectureId"] ?: -1
+
+    // 2. Преобразуем в Nullable для удобства логики
+    // Если пришел -1, значит это null (не этот тип теста)
+    private val topicId: Int? = if (topicIdArg != -1) topicIdArg else null
+    private val lectureId: Int? = if (lectureIdArg != -1) lectureIdArg else null
+
     private var existingDraft: TestDraft? = null // Храним загруженный драфт
 
     init {
@@ -28,31 +37,29 @@ class TestCreatorViewModel @Inject constructor(
     private fun checkExistingTest() {
         setState { copy(isLoading = true) }
         viewModelScope.launch {
-            getAdminTestUseCase(topicId)
+            // Передаем оба ID, UseCase сам разберется, какой искать
+            getAdminTestUseCase(topicId, lectureId)
                 .onSuccess { draft ->
                     if (draft != null) {
-                        // Сохраняем во временную переменную, чтобы потом восстановить
                         existingDraft = draft
-                        // Показываем диалог
                         setState { copy(isLoading = false, showFoundTestDialog = true) }
                     } else {
-                        // Теста нет -> Можно создавать новый
                         setState { copy(isLoading = false) }
                     }
                 }
                 .onFailure {
                     setState { copy(isLoading = false) }
-                    // Ошибку можно игнорировать и просто дать создать новый
                 }
         }
     }
 
     override fun createInitialState(): TestCreatorContract.State {
-        // Добавь лог сюда
-        android.util.Log.d("TestCreatorDebug", "ViewModel init with topicId: $topicId")
+        android.util.Log.d("TestCreatorDebug", "Init: topicId=$topicId, lectureId=$lectureId")
+
         return TestCreatorContract.State(
             testDraft = TestDraft(
-                topicId = topicId,
+                topicId = topicId,     // Может быть null
+                lectureId = lectureId, // Может быть null
                 title = "",
                 timeLimitMinutes = 0
             )
@@ -72,7 +79,6 @@ class TestCreatorViewModel @Inject constructor(
                 }
             }
             is TestCreatorContract.Event.OnCreateNewTest -> {
-                // Просто закрываем диалог, у нас уже пустой черновик
                 setState { copy(showFoundTestDialog = false) }
             }
             is TestCreatorContract.Event.OnBackClicked -> setEffect { TestCreatorContract.Effect.NavigateBack }
@@ -82,7 +88,6 @@ class TestCreatorViewModel @Inject constructor(
                 setState { copy(testDraft = testDraft.copy(title = event.title)) }
             }
             is TestCreatorContract.Event.OnTimeLimitChanged -> {
-                // Фильтруем ввод (только цифры)
                 val minutes = event.minutes.filter { it.isDigit() }.toIntOrNull() ?: 0
                 setState { copy(testDraft = testDraft.copy(timeLimitMinutes = minutes)) }
             }
@@ -106,14 +111,12 @@ class TestCreatorViewModel @Inject constructor(
 
     private fun saveQuestionToDraft(question: QuestionDraft) {
         val currentList = currentState.testDraft.questions.toMutableList()
-
-        // Ищем, есть ли уже вопрос с таким ID (редактирование)
         val index = currentList.indexOfFirst { it.id == question.id }
 
         if (index != -1) {
-            currentList[index] = question // Обновляем
+            currentList[index] = question
         } else {
-            currentList.add(question) // Добавляем новый
+            currentList.add(question)
         }
 
         setState {
@@ -133,13 +136,19 @@ class TestCreatorViewModel @Inject constructor(
     private fun saveTest() {
         val draft = currentState.testDraft
 
-        // --- ИСПРАВЛЕНИЕ: Принудительно ставим правильный topicId перед отправкой ---
-        val finalDraft = draft.copy(topicId = this.topicId)
-        if (finalDraft.title.isBlank()) { // Используем finalDraft
+        // 3. ФИНАЛЬНАЯ СБОРКА: Гарантируем, что ID правильные перед отправкой
+        // Мы берем topicId и lectureId из полей класса (которые мы вычислили в init),
+        // а не из draft, чтобы исключить любые ошибки UI.
+        val finalDraft = draft.copy(
+            topicId = this.topicId,
+            lectureId = this.lectureId
+        )
+
+        if (finalDraft.title.isBlank()) {
             setEffect { TestCreatorContract.Effect.ShowMessage("Введите название теста") }
             return
         }
-        if (draft.questions.isEmpty()) {
+        if (finalDraft.questions.isEmpty()) {
             setEffect { TestCreatorContract.Effect.ShowMessage("Добавьте хотя бы один вопрос") }
             return
         }

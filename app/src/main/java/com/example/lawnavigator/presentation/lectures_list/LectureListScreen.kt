@@ -21,7 +21,10 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -32,17 +35,17 @@ import androidx.compose.ui.unit.dp
 fun LecturesListScreen(
     viewModel: LecturesListViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit,
-    onNavigateToLecture: (Int) -> Unit
+    onNavigateToLecture: (Int) -> Unit,
+    onNavigateToTest: (Int) -> Unit,      // <--- Пройти тест
+    onNavigateToCreateTest: (Int) -> Unit // <--- Создать тест
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
 
-    // Лаунчер для выбора файла
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
-            // Читаем байты из URI
             val bytes = readBytesFromUri(context, it)
             val name = getFileName(context, it) ?: "New Lecture"
             if (bytes != null) {
@@ -74,12 +77,10 @@ fun LecturesListScreen(
                 }
             )
         },
-        // КНОПКА ЗАГРУЗКИ (Только для учителя)
         floatingActionButton = {
             if (state.isTeacher) {
                 FloatingActionButton(
                     onClick = {
-                        // Запускаем выбор .docx файлов
                         launcher.launch("application/vnd.openxmlformats-officedocument.wordprocessingml.document")
                     }
                 ) {
@@ -93,7 +94,7 @@ fun LecturesListScreen(
         }
     ) { padding ->
         Box(modifier = Modifier.padding(padding).fillMaxSize()) {
-            if (state.isLoading && !state.isUploading) { // Не показываем общий лоадер при загрузке файла
+            if (state.isLoading && !state.isUploading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else {
                 LazyColumn {
@@ -105,6 +106,36 @@ fun LecturesListScreen(
                             },
                             modifier = Modifier.clickable {
                                 viewModel.setEvent(LecturesListContract.Event.OnLectureClicked(lecture.id))
+                            },
+                            // ВОТ ЗДЕСЬ КНОПКИ СБОКУ
+                            trailingContent = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+
+                                    // 1. УЧИТЕЛЬ: Гаечный ключ (Создать/Изменить тест)
+                                    if (state.isTeacher) {
+                                        IconButton(onClick = { onNavigateToCreateTest(lecture.id) }) {
+                                            // Если тест уже есть - подсвечиваем primary цветом, иначе серым
+                                            val tint = if (lecture.hasTest) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                            Icon(
+                                                imageVector = Icons.Default.Build,
+                                                contentDescription = "Редактор теста",
+                                                tint = tint
+                                            )
+                                        }
+                                    }
+
+                                    // 2. КНОПКА PLAY (Видна всем, если тест существует)
+                                    // Учитель тоже увидит её здесь и сможет пройти свой тест
+                                    if (lecture.hasTest) {
+                                        IconButton(onClick = { onNavigateToTest(lecture.id) }) {
+                                            Icon(
+                                                imageVector = Icons.Default.PlayArrow,
+                                                contentDescription = "Пройти тест",
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         )
                         HorizontalDivider()
@@ -115,7 +146,6 @@ fun LecturesListScreen(
     }
 }
 
-// Вспомогательная функция для чтения байтов
 private fun readBytesFromUri(context: Context, uri: Uri): ByteArray? {
     return try {
         context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
@@ -125,9 +155,6 @@ private fun readBytesFromUri(context: Context, uri: Uri): ByteArray? {
     }
 }
 
-// Получение имени файла (упрощенно)
 private fun getFileName(context: Context, uri: Uri): String? {
-    // В реальном проекте тут нужно делать запрос к ContentResolver для DISPLAY_NAME
-    // Но для диплома можно просто вернуть заглушку или путь
-    return uri.lastPathSegment ?: "Lecture.docx"
+    return uri.lastPathSegment?.substringAfterLast("/") ?: "Lecture.docx"
 }

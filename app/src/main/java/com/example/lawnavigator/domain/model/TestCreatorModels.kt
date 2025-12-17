@@ -7,10 +7,11 @@ import java.util.UUID
  * Хранится в памяти, пока не будет отправлена на сервер.
  */
 data class TestDraft(
-    val topicId: Int,
-    val id: Int? = null, // ID теста, если редактируем существующий
+    val topicId: Int? = null,
+    val lectureId: Int? = null, // <--- ДОБАВЬ ЭТО, ЕСЛИ НЕТ
+    val id: Int? = null,
     val title: String,
-    val timeLimitMinutes: Int, // В минутах (для UI)
+    val timeLimitMinutes: Int,
     val questions: List<QuestionDraft> = emptyList()
 )
 

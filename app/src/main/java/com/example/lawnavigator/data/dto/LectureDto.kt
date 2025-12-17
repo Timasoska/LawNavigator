@@ -8,7 +8,8 @@ data class LectureDto(
     val title: String,
     val content: String,
     val topicId: Int,
-    val isFavorite: Boolean
+    val isFavorite: Boolean,
+    val hasTest: Boolean = false // <--- НОВОЕ ПОЛЕ
 )
 
 @Serializable

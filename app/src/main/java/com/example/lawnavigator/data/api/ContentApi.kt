@@ -27,6 +27,19 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ContentApi {
+
+    @GET("api/admin/tests/lecture/{id}")
+    suspend fun getAdminTestByLecture(
+        @Header("Authorization") token: String,
+        @Path("id") lectureId: Int
+    ): AdminTestResponseDto?
+
+    @GET("api/lectures/{id}/test")
+    suspend fun getTestByLecture(
+        @Header("Authorization") token: String,
+        @Path("id") lectureId: Int
+    ): TestDto
+
     @GET("api/admin/tests/{topicId}")
     suspend fun getAdminTest(
         @Header("Authorization") token: String,

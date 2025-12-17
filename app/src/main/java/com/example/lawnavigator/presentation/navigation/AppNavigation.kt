@@ -91,9 +91,20 @@ fun AppNavigation(
 
         // Test
         composable(
-            route = Screen.Test.route,
-            arguments = listOf(navArgument("topicId") { type = NavType.IntType })
+            route = Screen.Test.route, // Убедись, что Screen.Test.route = "test?topicId={topicId}&lectureId={lectureId}"
+            arguments = listOf(
+                // Мы должны явно указать оба аргумента, чтобы навигация их распознала
+                navArgument("topicId") {
+                    type = NavType.IntType
+                    defaultValue = -1
+                },
+                navArgument("lectureId") {
+                    type = NavType.IntType
+                    defaultValue = -1
+                }
+            )
         ) {
+            // Hilt ViewModel сама достанет аргументы
             com.example.lawnavigator.presentation.test.TestScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
@@ -116,8 +127,13 @@ fun AppNavigation(
             val queryArgument = backStackEntry.arguments?.getString("searchQuery")
 
             LectureScreen(
-                searchQuery = queryArgument, // <--- ТЕПЕРЬ ПЕРЕДАЕМ РЕАЛЬНОЕ ЗНАЧЕНИЕ
-                onNavigateBack = { navController.popBackStack() }
+                searchQuery = queryArgument,
+                onNavigateBack = { navController.popBackStack() },
+
+                // Навигация на тест ЛЕКЦИИ
+                onNavigateToTest = { lectureId ->
+                    navController.navigate(Screen.Test.createRoute(lectureId = lectureId))
+                }
             )
         }
 
@@ -180,27 +196,44 @@ fun AppNavigation(
         ) {
             com.example.lawnavigator.presentation.lectures_list.LecturesListScreen(
                 onNavigateBack = { navController.popBackStack() },
+
                 onNavigateToLecture = { lectureId ->
-                    // А вот отсюда уже идем читать конкретную лекцию
                     navController.navigate(Screen.Lecture.createRoute(lectureId))
+                },
+
+                // --- ДОБАВЛЯЕМ ПРОПУЩЕННЫЕ КОЛБЭКИ ---
+
+                // 1. Пройти тест по лекции
+                onNavigateToTest = { lectureId ->
+                    navController.navigate(Screen.Test.createRoute(lectureId = lectureId))
+                },
+
+                // 2. Создать тест по лекции (для учителя)
+                onNavigateToCreateTest = { lectureId ->
+                    navController.navigate(Screen.TestCreator.createRoute(lectureId = lectureId))
                 }
             )
         }
 
+
         composable(
             route = Screen.TestCreator.route,
-            arguments = listOf(navArgument("topicId") { type = NavType.IntType })
-        ) { backStackEntry ->
-            val topicId = backStackEntry.arguments?.getInt("topicId") ?: 0
-            android.util.Log.d("NavDebug", "Navigating to TestCreator with ID: $topicId")
-            // Hilt сам возьмет аргумент из SavedStateHandle.
-            // Нам нужно просто вызвать экран.
-
+            arguments = listOf(
+                // Теперь принимаем ДВА необязательных аргумента
+                navArgument("topicId") {
+                    type = NavType.IntType
+                    defaultValue = -1
+                },
+                navArgument("lectureId") {
+                    type = NavType.IntType
+                    defaultValue = -1
+                }
+            )
+        ) {
             com.example.lawnavigator.presentation.test_creator.TestCreatorScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
-
         composable(
             route = Screen.Topics.route,
             arguments = listOf(
