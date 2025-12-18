@@ -38,6 +38,7 @@ class LecturesListViewModel @Inject constructor(
 
     override fun handleEvent(event: LecturesListContract.Event) {
         when (event) {
+            is LecturesListContract.Event.OnRefresh -> loadLectures() // <--- Добавить
             is LecturesListContract.Event.OnBackClicked -> setEffect { LecturesListContract.Effect.NavigateBack }
             is LecturesListContract.Event.OnLectureClicked -> setEffect { LecturesListContract.Effect.NavigateToLecture(event.lectureId) }
             is LecturesListContract.Event.OnFileSelected -> uploadFile(event.bytes, event.name)

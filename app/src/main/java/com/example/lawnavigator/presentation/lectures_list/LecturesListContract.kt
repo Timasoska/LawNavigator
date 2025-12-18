@@ -17,7 +17,7 @@ class LecturesListContract {
     sealed class Event : ViewIntent {
         data object OnBackClicked : Event()
         data class OnLectureClicked(val lectureId: Int) : Event()
-        // Событие: файл выбран, начинаем загрузку
+        data object OnRefresh : Event() // <--- Добавить
         data class OnFileSelected(val bytes: ByteArray, val name: String) : Event()
     }
 

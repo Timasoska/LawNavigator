@@ -54,6 +54,9 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.core.splashscreen)
+
     implementation(libs.compose.markdown)
     implementation(libs.androidx.material.icons.extended)
 

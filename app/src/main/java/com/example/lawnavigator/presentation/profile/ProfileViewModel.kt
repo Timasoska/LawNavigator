@@ -27,6 +27,7 @@ class ProfileViewModel @Inject constructor(
 
     override fun handleEvent(event: ProfileContract.Event) {
         when (event) {
+            is ProfileContract.Event.OnRefresh -> loadData() // <--- Добавить
             is ProfileContract.Event.OnLogoutClicked -> logout()
             is ProfileContract.Event.OnBackClicked -> setEffect { ProfileContract.Effect.NavigateBack } // <--- Добавили
             is ProfileContract.Event.OnRecommendationClicked -> {

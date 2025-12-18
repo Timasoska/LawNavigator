@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.lawnavigator.presentation.components.CommonPullToRefreshBox
 import com.example.lawnavigator.presentation.components.EmptyScreen
 import com.example.lawnavigator.presentation.components.ErrorScreen
 import com.example.lawnavigator.presentation.components.LoadingScreen
@@ -75,7 +76,11 @@ fun TopicsScreen(
             )
         }
     ) { padding ->
-        Box(modifier = Modifier.padding(padding).fillMaxSize()) {
+        CommonPullToRefreshBox(
+            isRefreshing = state.isLoading,
+            onRefresh = { viewModel.setEvent(TopicsContract.Event.OnRetryClicked) },
+            modifier = Modifier.padding(padding).fillMaxSize()
+        ) {
             when {
                 state.isLoading -> LoadingScreen()
 
@@ -85,11 +90,9 @@ fun TopicsScreen(
                         onRetry = { viewModel.setEvent(TopicsContract.Event.OnRetryClicked) }
                     )
                 }
-
                 state.topics.isEmpty() -> {
                     EmptyScreen(message = "В этой дисциплине пока нет тем")
                 }
-
                 else -> {
                     LazyColumn {
                         items(state.topics) { topic ->

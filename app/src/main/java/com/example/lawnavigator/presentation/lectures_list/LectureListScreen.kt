@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.example.lawnavigator.presentation.components.CommonPullToRefreshBox
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -93,52 +94,65 @@ fun LecturesListScreen(
             }
         }
     ) { padding ->
-        Box(modifier = Modifier.padding(padding).fillMaxSize()) {
-            if (state.isLoading && !state.isUploading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            } else {
-                LazyColumn {
-                    items(state.lectures) { lecture ->
-                        ListItem(
-                            headlineContent = { Text(lecture.title) },
-                            leadingContent = {
-                                Icon(Icons.Default.Description, contentDescription = null)
-                            },
-                            modifier = Modifier.clickable {
-                                viewModel.setEvent(LecturesListContract.Event.OnLectureClicked(lecture.id))
-                            },
-                            // ВОТ ЗДЕСЬ КНОПКИ СБОКУ
-                            trailingContent = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
+        // Оборачиваем Box в CommonPullToRefreshBox
+        CommonPullToRefreshBox(
+            // Показывать спиннер, если грузимся, но НЕ если грузим файл (чтобы не путать)
+            isRefreshing = state.isLoading && !state.isUploading,
+            onRefresh = { viewModel.setEvent(LecturesListContract.Event.OnRefresh) },
+            modifier = Modifier.padding(padding).fillMaxSize()
+        ) {
+            Box(modifier = Modifier.padding(padding).fillMaxSize()) {
+                if (state.isLoading && !state.isUploading) {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                } else {
+                    LazyColumn {
+                        items(state.lectures) { lecture ->
+                            ListItem(
+                                headlineContent = { Text(lecture.title) },
+                                leadingContent = {
+                                    Icon(Icons.Default.Description, contentDescription = null)
+                                },
+                                modifier = Modifier.clickable {
+                                    viewModel.setEvent(
+                                        LecturesListContract.Event.OnLectureClicked(
+                                            lecture.id
+                                        )
+                                    )
+                                },
+                                // ВОТ ЗДЕСЬ КНОПКИ СБОКУ
+                                trailingContent = {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
 
-                                    // 1. УЧИТЕЛЬ: Гаечный ключ (Создать/Изменить тест)
-                                    if (state.isTeacher) {
-                                        IconButton(onClick = { onNavigateToCreateTest(lecture.id) }) {
-                                            // Если тест уже есть - подсвечиваем primary цветом, иначе серым
-                                            val tint = if (lecture.hasTest) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                                            Icon(
-                                                imageVector = Icons.Default.Build,
-                                                contentDescription = "Редактор теста",
-                                                tint = tint
-                                            )
+                                        // 1. УЧИТЕЛЬ: Гаечный ключ (Создать/Изменить тест)
+                                        if (state.isTeacher) {
+                                            IconButton(onClick = { onNavigateToCreateTest(lecture.id) }) {
+                                                // Если тест уже есть - подсвечиваем primary цветом, иначе серым
+                                                val tint =
+                                                    if (lecture.hasTest) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                                Icon(
+                                                    imageVector = Icons.Default.Build,
+                                                    contentDescription = "Редактор теста",
+                                                    tint = tint
+                                                )
+                                            }
                                         }
-                                    }
 
-                                    // 2. КНОПКА PLAY (Видна всем, если тест существует)
-                                    // Учитель тоже увидит её здесь и сможет пройти свой тест
-                                    if (lecture.hasTest) {
-                                        IconButton(onClick = { onNavigateToTest(lecture.id) }) {
-                                            Icon(
-                                                imageVector = Icons.Default.PlayArrow,
-                                                contentDescription = "Пройти тест",
-                                                tint = MaterialTheme.colorScheme.primary
-                                            )
+                                        // 2. КНОПКА PLAY (Видна всем, если тест существует)
+                                        // Учитель тоже увидит её здесь и сможет пройти свой тест
+                                        if (lecture.hasTest) {
+                                            IconButton(onClick = { onNavigateToTest(lecture.id) }) {
+                                                Icon(
+                                                    imageVector = Icons.Default.PlayArrow,
+                                                    contentDescription = "Пройти тест",
+                                                    tint = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
                                         }
                                     }
                                 }
-                            }
-                        )
-                        HorizontalDivider()
+                            )
+                            HorizontalDivider()
+                        }
                     }
                 }
             }

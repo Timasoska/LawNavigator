@@ -25,6 +25,7 @@ class ProfileContract {
         data class OnRecommendationClicked(val topicId: Int) : Event()
         data object NavigateBack : Effect() // <--- Добавили
         data object OnBackClicked : Event() // <--- Добавили
+        data object OnRefresh : Event() // <--- Добавить
     }
 
     /**
