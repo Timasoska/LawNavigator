@@ -25,6 +25,17 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import dev.jeziellago.compose.markdowntext.MarkdownText
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material.icons.filled.Description
+import com.example.lawnavigator.BuildConfig // Убедись, что импортируется BuildConfig твоего пакета
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,45 +43,43 @@ fun LectureScreen(
     viewModel: LectureViewModel = hiltViewModel(),
     searchQuery: String?,
     onNavigateBack: () -> Unit,
-    onNavigateToTest: (Int) -> Unit // <--- НОВЫЙ КОЛБЭК
+    onNavigateToTest: (Int) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
     val scrollState = rememberScrollState()
 
-    var isHighlightVisible by remember { mutableStateOf(false) }
-    var hasScrolledToSearchQuery by remember { mutableStateOf(false) }
-
-    // АВТО-СКРОЛЛ И ПОДСВЕТКА
-    LaunchedEffect(state.initialScrollIndex, searchQuery, state.lecture) {
-        val currentLecture = state.lecture
-        if (currentLecture != null && (state.initialScrollIndex > 0 || (searchQuery != null && !hasScrolledToSearchQuery))) {
-            if (searchQuery != null) isHighlightVisible = true
-            delay(600)
-            val targetScrollPosition = if (state.initialScrollIndex > 0) state.initialScrollIndex
-            else if (searchQuery != null && !hasScrolledToSearchQuery) {
-                val index = currentLecture.content.lowercase().indexOf(searchQuery.lowercase())
-                if (index != -1) (index * 1.5).toInt() else 0
-            } else 0
-
-            if (targetScrollPosition > 0) {
-                scrollState.animateScrollTo(value = targetScrollPosition, animationSpec = androidx.compose.animation.core.tween(1500))
-                if (isHighlightVisible) { delay(2000); isHighlightVisible = false }
-                hasScrolledToSearchQuery = true
+    // Лаунчер для выбора файла (Для учителя)
+    val fileLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            val bytes = readBytesFromUri(context, it)
+            val name = getFileName(context, it) ?: "File"
+            if (bytes != null) {
+                viewModel.setEvent(LectureContract.Event.OnAttachFileSelected(bytes, name))
+            } else {
+                Toast.makeText(context, "Ошибка чтения файла", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
-    // Логика выхода
+    // АВТО-СКРОЛЛ
+    LaunchedEffect(state.initialScrollIndex, searchQuery, state.lecture) {
+        val currentLecture = state.lecture
+        if (currentLecture != null && (state.initialScrollIndex > 0)) {
+            delay(600)
+            scrollState.animateScrollTo(state.initialScrollIndex)
+            Toast.makeText(context, "Возвращаемся к месту чтения...", Toast.LENGTH_SHORT).show()
+        }
+        // Логику подсветки мы упростили/убрали по твоему желанию, оставили только скролл
+    }
+
     fun saveAndExit() {
         if (!state.isEditing) viewModel.setEvent(LectureContract.Event.OnSaveProgress(scrollState.value))
         viewModel.setEvent(LectureContract.Event.OnBackClicked)
     }
 
-    // УМНЫЙ BACK HANDLER
-    // 1. Если открыт диалог удаления -> закрываем диалог
-    // 2. Если режим редактирования -> отменяем редактирование
-    // 3. Иначе -> сохраняем позицию и выходим
     BackHandler {
         when {
             state.showDeleteDialog -> viewModel.setEvent(LectureContract.Event.OnDismissDeleteDialog)
@@ -84,16 +93,26 @@ fun LectureScreen(
             when (effect) {
                 is LectureContract.Effect.NavigateBack -> onNavigateBack()
                 is LectureContract.Effect.ShowMessage -> Toast.makeText(context, effect.msg, Toast.LENGTH_SHORT).show()
+                // Открытие файла в браузере (скачивание)
+                is LectureContract.Effect.OpenUrl -> {
+                    try {
+                        val fullUrl = "${BuildConfig.BASE_URL.trimEnd('/')}${effect.url}"
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(fullUrl))
+                        context.startActivity(intent)
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "Не удалось открыть файл", Toast.LENGTH_SHORT).show()
+                    }
+                }
             }
         }
     }
 
-    // ДИАЛОГ УДАЛЕНИЯ (Вынесли наверх для чистоты)
+    // Диалог удаления
     if (state.showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { viewModel.setEvent(LectureContract.Event.OnDismissDeleteDialog) },
             title = { Text("Удалить лекцию?") },
-            text = { Text("Это действие нельзя отменить. Лекция будет удалена навсегда.") },
+            text = { Text("Это действие нельзя отменить.") },
             confirmButton = {
                 TextButton(
                     onClick = { viewModel.setEvent(LectureContract.Event.OnConfirmDelete) },
@@ -120,21 +139,27 @@ fun LectureScreen(
                 },
                 actions = {
                     if (state.isEditing) {
-                        // Кнопка СОХРАНИТЬ
                         IconButton(onClick = { viewModel.setEvent(LectureContract.Event.OnSaveEditsClicked) }) {
                             Icon(Icons.Default.Check, contentDescription = "Сохранить", tint = MaterialTheme.colorScheme.primary)
                         }
                     } else {
-                        // ДЛЯ УЧИТЕЛЯ
+                        // --- ИНСТРУМЕНТЫ УЧИТЕЛЯ ---
                         if (state.isTeacher) {
+                            // 1. Скрепка (Прикрепить файл)
+                            IconButton(onClick = { fileLauncher.launch("*/*") }) {
+                                Icon(Icons.Default.AttachFile, contentDescription = "Прикрепить файл")
+                            }
+                            // 2. Редактировать
                             IconButton(onClick = { viewModel.setEvent(LectureContract.Event.OnEditClicked) }) {
                                 Icon(Icons.Default.Edit, contentDescription = "Редактировать")
                             }
+                            // 3. Удалить
                             IconButton(onClick = { viewModel.setEvent(LectureContract.Event.OnDeleteClicked) }) {
                                 Icon(Icons.Default.Delete, contentDescription = "Удалить", tint = MaterialTheme.colorScheme.error)
                             }
                         }
-                        // ЛАЙК
+
+                        // --- ИНСТРУМЕНТЫ ДЛЯ ВСЕХ ---
                         IconButton(onClick = { viewModel.setEvent(LectureContract.Event.OnFavoriteClicked) }) {
                             Icon(
                                 imageVector = if (state.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
@@ -151,9 +176,8 @@ fun LectureScreen(
             if (state.isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else {
-
-                // === РЕЖИМ РЕДАКТИРОВАНИЯ ===
                 if (state.isEditing) {
+                    // РЕДАКТИРОВАНИЕ
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -171,21 +195,20 @@ fun LectureScreen(
                             value = state.editedContent,
                             onValueChange = { viewModel.setEvent(LectureContract.Event.OnContentChanged(it)) },
                             label = { Text("Содержание (Markdown)") },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(400.dp),
+                            modifier = Modifier.fillMaxWidth().height(400.dp),
                             textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Start)
                         )
                         Spacer(modifier = Modifier.height(100.dp))
                     }
-                }
-
-                // === РЕЖИМ ПРОСМОТРА ===
-                else {
+                } else {
+                    // ПРОСМОТР
                     state.lecture?.let { lecture ->
-                        val contentToDisplay = remember(lecture.content, searchQuery, isHighlightVisible) {
-                            if (isHighlightVisible) simpleHighlight(lecture.content, searchQuery) else lecture.content
+
+                        // Простая подсветка (код `...`)
+                        val contentToDisplay = remember(lecture.content, searchQuery) {
+                            simpleHighlight(lecture.content, searchQuery)
                         }
+
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -195,19 +218,48 @@ fun LectureScreen(
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(text = lecture.title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                             Spacer(modifier = Modifier.height(16.dp))
+
                             MarkdownText(
                                 markdown = contentToDisplay,
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
-                            Spacer(modifier = Modifier.height(100.dp))
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            // --- СПИСОК ФАЙЛОВ (ВИДЕН ВСЕМ) ---
+                            if (lecture.files.isNotEmpty()) {
+                                Text(
+                                    text = "Материалы к лекции:",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                lecture.files.forEach { file ->
+                                    Card(
+                                        onClick = { viewModel.setEvent(LectureContract.Event.OnFileClicked(file.url)) },
+                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(12.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(Icons.Default.Description, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                            Spacer(modifier = Modifier.width(12.dp))
+                                            Text(text = file.title, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                                            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(24.dp))
+                            }
+                            // ----------------------------------
 
                             if (lecture.hasTest && !state.isEditing) {
                                 Button(
-                                    onClick = { onNavigateToTest(lecture.id) }, // Здесь тоже lecture.id
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 16.dp)
+                                    onClick = { onNavigateToTest(lecture.id) },
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)
                                 ) {
                                     Icon(Icons.Default.Check, contentDescription = null)
                                     Spacer(modifier = Modifier.width(8.dp))
@@ -227,4 +279,14 @@ private fun simpleHighlight(markdown: String, query: String?): String {
     if (query.isNullOrBlank()) return markdown
     val escapedQuery = Regex.escape(query)
     return markdown.replace(Regex(escapedQuery, RegexOption.IGNORE_CASE), "`$0`")
+}
+
+private fun readBytesFromUri(context: Context, uri: Uri): ByteArray? {
+    return try {
+        context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+    } catch (e: Exception) { e.printStackTrace(); null }
+}
+
+private fun getFileName(context: Context, uri: Uri): String? {
+    return uri.lastPathSegment?.substringAfterLast("/") ?: "File"
 }

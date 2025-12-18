@@ -41,5 +41,7 @@ interface ContentRepository {
     suspend fun createTopic(disciplineId: Int, name: String): Result<Unit>
     suspend fun updateTopic(topicId: Int, name: String): Result<Unit>
     suspend fun deleteTopic(topicId: Int): Result<Unit>
+    suspend fun attachFile(lectureId: Int, fileBytes: ByteArray, fileName: String): Result<Unit>
+
 }
 

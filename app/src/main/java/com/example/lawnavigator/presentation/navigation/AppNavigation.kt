@@ -114,9 +114,8 @@ fun AppNavigation(
         composable(
             route = Screen.Lecture.route,
             arguments = listOf(
-                navArgument("lectureId") { type = NavType.IntType },
-                // Добавляем аргумент для поиска
-                navArgument("searchQuery") {
+                navArgument(name = "lectureId") { type = NavType.IntType },
+                navArgument(name = "searchQuery") {
                     type = NavType.StringType
                     nullable = true
                     defaultValue = null
@@ -127,12 +126,10 @@ fun AppNavigation(
             val queryArgument = backStackEntry.arguments?.getString("searchQuery")
 
             LectureScreen(
-                searchQuery = queryArgument,
+                searchQuery = queryArgument, // <--- ДОБАВЬ ЭТУ СТРОКУ
                 onNavigateBack = { navController.popBackStack() },
-
-                // Навигация на тест ЛЕКЦИИ
                 onNavigateToTest = { lectureId ->
-                    navController.navigate(Screen.Test.createRoute(lectureId = lectureId))
+                    navController.navigate(route = Screen.Test.createRoute(lectureId = lectureId))
                 }
             )
         }

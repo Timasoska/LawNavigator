@@ -29,6 +29,9 @@ class LectureContract {
         data object OnBackClicked : Event()
         data object OnFavoriteClicked : Event()
         data class OnSaveProgress(val scrollIndex: Int) : Event()
+        data class OnAttachFileSelected(val bytes: ByteArray, val name: String) : Event()
+        data class OnFileClicked(val url: String) : Event()
+
 
         // Редактирование
         data object OnEditClicked : Event()
@@ -46,5 +49,6 @@ class LectureContract {
     sealed class Effect : ViewSideEffect {
         data object NavigateBack : Effect()
         data class ShowMessage(val msg: String) : Effect()
+        data class OpenUrl(val url: String) : Effect() // Открыть браузер
     }
 }

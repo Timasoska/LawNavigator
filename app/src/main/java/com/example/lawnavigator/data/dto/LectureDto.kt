@@ -9,7 +9,9 @@ data class LectureDto(
     val content: String,
     val topicId: Int,
     val isFavorite: Boolean,
-    val hasTest: Boolean = false // <--- НОВОЕ ПОЛЕ
+    val hasTest: Boolean = false, // <--- НОВОЕ ПОЛЕ
+    val files: List<LectureFileDto> = emptyList()
+
 )
 
 @Serializable

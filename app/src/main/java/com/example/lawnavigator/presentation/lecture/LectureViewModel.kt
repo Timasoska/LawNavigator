@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.example.lawnavigator.core.mvi.BaseViewModel
 import com.example.lawnavigator.data.local.TokenManager
+import com.example.lawnavigator.domain.usecase.AttachFileUseCase
 import com.example.lawnavigator.domain.usecase.DeleteLectureUseCase
 import com.example.lawnavigator.domain.usecase.LectureUseCase
 import com.example.lawnavigator.domain.usecase.UpdateLectureUseCase
@@ -18,6 +19,7 @@ class LectureViewModel @Inject constructor(
     private val updateLectureUseCase: UpdateLectureUseCase, // <--- Новый UseCase
     private val tokenManager: TokenManager, // <--- Для проверки роли
     private val deleteLectureUseCase: DeleteLectureUseCase, // <--- Новый UseCase
+    private val attachFileUseCase: AttachFileUseCase, // <--- Инжект
     savedStateHandle: SavedStateHandle
 ) : BaseViewModel<LectureContract.State, LectureContract.Event, LectureContract.Effect>() {
 
@@ -40,6 +42,8 @@ class LectureViewModel @Inject constructor(
 
     override fun handleEvent(event: LectureContract.Event) {
         when (event) {
+            is LectureContract.Event.OnAttachFileSelected -> attachFile(event.bytes, event.name)
+            is LectureContract.Event.OnFileClicked -> setEffect { LectureContract.Effect.OpenUrl(event.url) }
             is LectureContract.Event.OnBackClicked -> setEffect { LectureContract.Effect.NavigateBack }
             is LectureContract.Event.OnFavoriteClicked -> toggleFavorite()
             is LectureContract.Event.OnSaveProgress -> saveProgress(event.scrollIndex)
@@ -155,6 +159,21 @@ class LectureViewModel @Inject constructor(
                     // Если ошибка - откатываем состояние
                     setState { copy(isFavorite = !newStatus) }
                     setEffect { LectureContract.Effect.ShowMessage("Ошибка сети") }
+                }
+        }
+    }
+
+    private fun attachFile(bytes: ByteArray, name: String) {
+        setState { copy(isLoading = true) }
+        viewModelScope.launch {
+            attachFileUseCase(lectureId, bytes, name)
+                .onSuccess {
+                    setEffect { LectureContract.Effect.ShowMessage("Файл прикреплен") }
+                    loadLecture() // Перезагружаем лекцию, чтобы увидеть файл в списке
+                }
+                .onFailure {
+                    setState { copy(isLoading = false) }
+                    setEffect { LectureContract.Effect.ShowMessage("Ошибка загрузки файла") }
                 }
         }
     }

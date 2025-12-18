@@ -19,6 +19,20 @@ class ContentRepositoryImpl @Inject constructor(
     private val tokenManager: TokenManager
 ) : ContentRepository {
 
+    override suspend fun attachFile(lectureId: Int, fileBytes: ByteArray, fileName: String): Result<Unit> {
+        return try {
+            val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
+
+            val requestFile = fileBytes.toRequestBody("*/*".toMediaTypeOrNull())
+            val filePart = MultipartBody.Part.createFormData("file", fileName, requestFile)
+
+            api.attachFile("Bearer $token", lectureId, filePart)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     override suspend fun createTopic(disciplineId: Int, name: String): Result<Unit> {
         return try {
             val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
@@ -259,7 +273,14 @@ class ContentRepositoryImpl @Inject constructor(
                 content = dto.content,
                 topicId = dto.topicId,
                 isFavorite = dto.isFavorite,
-                hasTest = dto.hasTest // <--- МАППИНГ
+                hasTest = dto.hasTest, // <--- МАППИНГ
+                files = dto.files.map { fileDto ->
+                    com.example.lawnavigator.domain.model.LectureFile(
+                        id = fileDto.id,
+                        title = fileDto.title,
+                        url = fileDto.url
+                    )
+                }
             ))
         } catch (e: Exception) { Result.failure(e) }
     }

@@ -29,6 +29,14 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ContentApi {
+    @Multipart
+    @POST("api/admin/lectures/{id}/files")
+    suspend fun attachFile(
+        @Header("Authorization") token: String,
+        @Path("id") lectureId: Int,
+        @Part file: MultipartBody.Part
+    )
+
     @POST("api/admin/topics")
     suspend fun createTopic(
         @Header("Authorization") token: String,
