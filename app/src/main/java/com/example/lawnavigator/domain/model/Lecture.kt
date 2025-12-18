@@ -6,6 +6,7 @@ data class Lecture(
     val content: String,
     val topicId: Int,
     val isFavorite: Boolean = false,
-    val hasTest: Boolean = false, // <--- НОВОЕ ПОЛЕ
-    val files: List<LectureFile> = emptyList() // <--- Убедись, что это есть
+    val hasTest: Boolean = false,
+    val userScore: Int? = null, // <--- НОВОЕ ПОЛЕ
+    val files: List<LectureFile> = emptyList()
 )

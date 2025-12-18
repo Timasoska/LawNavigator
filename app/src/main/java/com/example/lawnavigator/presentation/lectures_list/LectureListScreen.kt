@@ -26,7 +26,9 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.*
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.lawnavigator.presentation.components.CommonPullToRefreshBox
 
@@ -122,6 +124,23 @@ fun LecturesListScreen(
                                 // ВОТ ЗДЕСЬ КНОПКИ СБОКУ
                                 trailingContent = {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
+
+                                        // --- ОТОБРАЖЕНИЕ БАЛЛОВ ---
+                                        if (lecture.userScore != null) {
+                                            // Выбираем цвет: Зеленый (>=60) или Желтый
+                                            val scoreColor = if (lecture.userScore >= 60)
+                                                Color(0xFF4CAF50) // Green
+                                            else
+                                                Color(0xFFFFC107) // Amber
+
+                                            Text(
+                                                text = "${lecture.userScore}%",
+                                                style = MaterialTheme.typography.labelMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                color = scoreColor,
+                                                modifier = Modifier.padding(end = 8.dp)
+                                            )
+                                        }
 
                                         // 1. УЧИТЕЛЬ: Гаечный ключ (Создать/Изменить тест)
                                         if (state.isTeacher) {

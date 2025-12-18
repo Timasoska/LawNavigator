@@ -273,7 +273,8 @@ class ContentRepositoryImpl @Inject constructor(
                 content = dto.content,
                 topicId = dto.topicId,
                 isFavorite = dto.isFavorite,
-                hasTest = dto.hasTest, // <--- МАППИНГ
+                hasTest = dto.hasTest,
+                userScore = dto.userScore,
                 files = dto.files.map { fileDto ->
                     com.example.lawnavigator.domain.model.LectureFile(
                         id = fileDto.id,
@@ -350,7 +351,8 @@ class ContentRepositoryImpl @Inject constructor(
                     content = it.content,
                     topicId = it.topicId,
                     isFavorite = it.isFavorite,
-                    hasTest = it.hasTest // <--- ПРОВЕРЬ, ЕСТЬ ЛИ ЭТА СТРОКА?
+                    hasTest = it.hasTest,
+                    userScore = it.userScore // <--- МАППИНГ
                 )
             }
             Result.success(lectures)
