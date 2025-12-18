@@ -3,6 +3,7 @@ package com.example.lawnavigator.presentation.profile
 
 import androidx.lifecycle.viewModelScope
 import com.example.lawnavigator.core.mvi.BaseViewModel
+import com.example.lawnavigator.data.local.TokenManager
 import com.example.lawnavigator.domain.usecase.LogoutUseCase
 import com.example.lawnavigator.domain.usecase.profile.GetProfileDataUseCase
 import com.example.lawnavigator.presentation.profile.ProfileContract
@@ -16,20 +17,36 @@ import javax.inject.Inject
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val getProfileDataUseCase: GetProfileDataUseCase,
-    private val logoutUseCase: LogoutUseCase
+    private val logoutUseCase: LogoutUseCase,
+    private val tokenManager: TokenManager // <--- ДОБАВЛЕНО!
 ) : BaseViewModel<ProfileContract.State, ProfileContract.Event, ProfileContract.Effect>() {
 
     override fun createInitialState() = ProfileContract.State()
 
     init {
         loadData()
+        observeTheme()
+    }
+
+    private fun observeTheme() {
+        viewModelScope.launch {
+            tokenManager.themeMode.collect { mode ->
+                setState { copy(themeMode = mode) }
+            }
+        }
     }
 
     override fun handleEvent(event: ProfileContract.Event) {
         when (event) {
-            is ProfileContract.Event.OnRefresh -> loadData() // <--- Добавить
+            is ProfileContract.Event.OnThemeChanged -> {
+                viewModelScope.launch {
+                    tokenManager.saveTheme(event.mode)
+                }
+            }
+            // Обработка остальных событий (Pull-to-Refresh и навигация)
+            is ProfileContract.Event.OnRefresh -> loadData()
             is ProfileContract.Event.OnLogoutClicked -> logout()
-            is ProfileContract.Event.OnBackClicked -> setEffect { ProfileContract.Effect.NavigateBack } // <--- Добавили
+            is ProfileContract.Event.OnBackClicked -> setEffect { ProfileContract.Effect.NavigateBack }
             is ProfileContract.Event.OnRecommendationClicked -> {
                 setEffect { ProfileContract.Effect.NavigateToTopic(event.topicId) }
             }

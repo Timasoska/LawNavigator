@@ -19,7 +19,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.lawnavigator.presentation.components.CommonPullToRefreshBox
 import com.example.lawnavigator.presentation.components.MiniTrendIndicator
 import com.example.lawnavigator.presentation.components.ScoreChart
+import com.example.lawnavigator.presentation.components.ThemeOption
 import com.example.lawnavigator.presentation.components.TrendIndicator
+import com.example.lawnavigator.presentation.theme.ThemeMode
 import com.example.lawnavigator.presentation.utils.calculateTrendLocal
 import kotlinx.coroutines.flow.collectLatest
 
@@ -162,6 +164,32 @@ fun ProfileScreen(
                                             steps = 19
                                         )
                                     }
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(24.dp))
+                        }
+
+                        item {
+                            Text("Оформление:", style = MaterialTheme.typography.titleMedium)
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                                Column(modifier = Modifier.padding(8.dp)) {
+                                    ThemeOption(
+                                        label = "Системная",
+                                        selected = state.themeMode == ThemeMode.SYSTEM,
+                                        onClick = { viewModel.setEvent(ProfileContract.Event.OnThemeChanged(ThemeMode.SYSTEM)) }
+                                    )
+                                    ThemeOption(
+                                        label = "Светлая ☀️",
+                                        selected = state.themeMode == ThemeMode.LIGHT,
+                                        onClick = { viewModel.setEvent(ProfileContract.Event.OnThemeChanged(ThemeMode.LIGHT)) }
+                                    )
+                                    ThemeOption(
+                                        label = "Темная 🌑",
+                                        selected = state.themeMode == ThemeMode.DARK,
+                                        onClick = { viewModel.setEvent(ProfileContract.Event.OnThemeChanged(ThemeMode.DARK)) }
+                                    )
                                 }
                             }
                             Spacer(modifier = Modifier.height(24.dp))

@@ -4,6 +4,7 @@ import com.example.lawnavigator.core.mvi.ViewIntent
 import com.example.lawnavigator.core.mvi.ViewSideEffect
 import com.example.lawnavigator.core.mvi.ViewState
 import com.example.lawnavigator.domain.model.UserAnalytics
+import com.example.lawnavigator.presentation.theme.ThemeMode
 
 class ProfileContract {
 
@@ -14,7 +15,8 @@ class ProfileContract {
         val email: String = "student@example.com", // В идеале email тоже хранить в DataStore
         val analytics: UserAnalytics? = null,
         val isLoading: Boolean = false,
-        val error: String? = null
+        val error: String? = null,
+        val themeMode: ThemeMode = ThemeMode.SYSTEM // <--- Добавили поле
     ) : ViewState
 
     /**
@@ -26,6 +28,7 @@ class ProfileContract {
         data object NavigateBack : Effect() // <--- Добавили
         data object OnBackClicked : Event() // <--- Добавили
         data object OnRefresh : Event() // <--- Добавить
+        data class OnThemeChanged(val mode: ThemeMode) : Event() // <--- Событие
     }
 
     /**

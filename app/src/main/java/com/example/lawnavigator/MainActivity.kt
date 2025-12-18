@@ -26,11 +26,15 @@ class MainActivity : ComponentActivity() {
 
         super.onCreate(savedInstanceState)
         setContent {
-            LawNavigatorTheme {
-                val viewModel = hiltViewModel<MainViewModel>()
-                val startDestination by viewModel.startDestination.collectAsState()
-                val isLoading by viewModel.isLoading.collectAsState()
+            val viewModel = hiltViewModel<MainViewModel>()
+            val startDestination by viewModel.startDestination.collectAsState()
+            val isLoading by viewModel.isLoading.collectAsState()
 
+            // Подписываемся на тему
+            val currentTheme by viewModel.themeMode.collectAsState()
+
+            // Передаем themeMode в нашу тему
+            LawNavigatorTheme(themeMode = currentTheme) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
