@@ -135,10 +135,6 @@ class TestCreatorViewModel @Inject constructor(
 
     private fun saveTest() {
         val draft = currentState.testDraft
-
-        // 3. ФИНАЛЬНАЯ СБОРКА: Гарантируем, что ID правильные перед отправкой
-        // Мы берем topicId и lectureId из полей класса (которые мы вычислили в init),
-        // а не из draft, чтобы исключить любые ошибки UI.
         val finalDraft = draft.copy(
             topicId = this.topicId,
             lectureId = this.lectureId

@@ -94,7 +94,7 @@ fun TopicsScreen(
                     LazyColumn {
                         items(state.topics) { topic ->
                             ListItem(
-                                headlineContent = {  Text("${topic.name} [ID: ${topic.id}]")  },
+                                headlineContent = {  Text("${topic.name}")},
                                 modifier = Modifier.clickable {
                                     viewModel.setEvent(TopicsContract.Event.OnTopicClicked(topic.id))
                                 },
