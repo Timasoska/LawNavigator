@@ -19,6 +19,30 @@ class ContentRepositoryImpl @Inject constructor(
     private val tokenManager: TokenManager
 ) : ContentRepository {
 
+    override suspend fun createTopic(disciplineId: Int, name: String): Result<Unit> {
+        return try {
+            val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
+            api.createTopic("Bearer $token", SaveTopicRequestDto(disciplineId, name))
+            Result.success(Unit)
+        } catch (e: Exception) { Result.failure(e) }
+    }
+
+    override suspend fun updateTopic(topicId: Int, name: String): Result<Unit> {
+        return try {
+            val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
+            api.updateTopic("Bearer $token", topicId, UpdateTopicRequestDto(name))
+            Result.success(Unit)
+        } catch (e: Exception) { Result.failure(e) }
+    }
+
+    override suspend fun deleteTopic(topicId: Int): Result<Unit> {
+        return try {
+            val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
+            api.deleteTopic("Bearer $token", topicId)
+            Result.success(Unit)
+        } catch (e: Exception) { Result.failure(e) }
+    }
+
     override suspend fun getAdminTestByLecture(lectureId: Int): Result<TestDraft?> {
         return try {
             val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))

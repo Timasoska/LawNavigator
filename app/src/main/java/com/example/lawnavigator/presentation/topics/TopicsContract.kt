@@ -11,7 +11,13 @@ class TopicsContract {
         val topics: List<Topic> = emptyList(),
         val isLoading: Boolean = false,
         val error: String? = null,
-        val isTeacher: Boolean = false // <--- НОВОЕ ПОЛЕ
+        val isTeacher: Boolean = false, // <--- НОВОЕ ПОЛЕ
+        // --- НОВЫЕ ПОЛЯ ДЛЯ ДИАЛОГОВ ---
+        val showTopicDialog: Boolean = false, // Диалог создания/редактирования
+        val editingTopicId: Int? = null,      // Если null - создаем новую, иначе редактируем эту
+        val topicNameInput: String = "",      // Ввод названия
+        val showDeleteDialog: Boolean = false, // Диалог удаления
+        val topicToDeleteId: Int? = null
     ) : ViewState
 
     sealed class Event : ViewIntent {
@@ -21,6 +27,15 @@ class TopicsContract {
 
         // <--- НОВОЕ СОБЫТИЕ: Нажали "Создать тест"
         data class OnCreateTestClicked(val topicId: Int) : Event()
+        // --- НОВЫЕ СОБЫТИЯ ---
+        data object OnAddTopicClicked : Event()                    // Нажали (+)
+        data class OnEditTopicClicked(val topic: Topic) : Event()  // Нажали (карандаш)
+        data class OnDeleteTopicClicked(val topicId: Int) : Event()// Нажали (корзина)
+
+        data class OnTopicNameChanged(val name: String) : Event()  // Ввод текста
+        data object OnSaveTopic : Event()                          // Нажали "Сохранить" в диалоге
+        data object OnConfirmDeleteTopic : Event()                 // Нажали "Да" при удалении
+        data object OnDismissDialogs : Event()                     // Закрыть любой диалог
     }
 
     sealed class Effect : ViewSideEffect {

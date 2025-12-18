@@ -7,12 +7,14 @@ import com.example.lawnavigator.data.dto.LectureDto
 import com.example.lawnavigator.data.dto.LectureProgressDto
 import com.example.lawnavigator.data.dto.ProgressDto
 import com.example.lawnavigator.data.dto.SaveTestRequestDto
+import com.example.lawnavigator.data.dto.SaveTopicRequestDto
 import com.example.lawnavigator.data.dto.SubmitAnswerRequest
 import com.example.lawnavigator.data.dto.TestDto
 import com.example.lawnavigator.data.dto.TestResultDto
 import com.example.lawnavigator.data.dto.TopicDto
 import com.example.lawnavigator.data.dto.UpdateLectureRequestDto
 import com.example.lawnavigator.data.dto.UpdateProgressRequest
+import com.example.lawnavigator.data.dto.UpdateTopicRequestDto
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.http.Body
@@ -27,6 +29,24 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ContentApi {
+    @POST("api/admin/topics")
+    suspend fun createTopic(
+        @Header("Authorization") token: String,
+        @Body request: SaveTopicRequestDto
+    )
+
+    @PUT("api/admin/topics/{id}")
+    suspend fun updateTopic(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int,
+        @Body request: UpdateTopicRequestDto
+    )
+
+    @DELETE("api/admin/topics/{id}")
+    suspend fun deleteTopic(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int
+    )
 
     @GET("api/admin/tests/lecture/{id}")
     suspend fun getAdminTestByLecture(
