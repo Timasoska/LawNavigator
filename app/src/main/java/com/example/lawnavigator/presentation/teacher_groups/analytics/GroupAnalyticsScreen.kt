@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -62,12 +63,23 @@ fun GroupAnalyticsScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                 }
 
+                // ИСПОЛЬЗУЕМ СПИСОК СТУДЕНТОВ ИЗ STATE
                 items(state.students) { student ->
-                    StudentCard(student)
+                    StudentCard(
+                        student = student,
+                        onRemoveClick = {
+                            // Вызываем событие удаления (нужно добавить его в контракт, если нет)
+                            viewModel.setEvent(GroupAnalyticsContract.Event.OnRemoveStudentClicked(student.studentId))
+                        }
+                    )
                 }
 
                 if (state.students.isEmpty() && !state.isLoading) {
-                    item { Text("В группе пока нет студентов", color = Color.Gray) }
+                    item {
+                        Box(modifier = Modifier.fillMaxWidth().padding(top = 32.dp), contentAlignment = Alignment.Center) {
+                            Text("В группе пока нет студентов", color = Color.Gray)
+                        }
+                    }
                 }
             }
         }
@@ -75,7 +87,10 @@ fun GroupAnalyticsScreen(
 }
 
 @Composable
-fun StudentCard(student: StudentRiskDto) {
+fun StudentCard(
+    student: StudentRiskDto,
+    onRemoveClick: () -> Unit
+) {
     val riskColor = when (student.riskLevel) {
         "RED" -> Color(0xFFE53935)   // Красный
         "YELLOW" -> Color(0xFFFFB300) // Желтый
@@ -108,8 +123,17 @@ fun StudentCard(student: StudentRiskDto) {
                 )
             }
 
-            // Тренд
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Тренд (Стрелочка)
             MiniTrendIndicator(trend = student.trend)
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Кнопка удаления
+            IconButton(onClick = onRemoveClick) {
+                Icon(Icons.Default.Close, contentDescription = "Исключить", tint = Color.Gray)
+            }
         }
     }
 }

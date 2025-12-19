@@ -37,6 +37,9 @@ class TeacherGroupsContract {
         // Выпадающий список
         data class OnDisciplineSelected(val discipline: Discipline) : Event()
         data class OnDropdownExpanded(val isExpanded: Boolean) : Event()
+
+        data class OnEditGroupClicked(val group: TeacherGroupDto) : Event()
+        data class OnDeleteGroupClicked(val groupId: Int) : Event()
     }
 
     sealed class Effect : ViewSideEffect {

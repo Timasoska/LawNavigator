@@ -17,6 +17,7 @@ import com.example.lawnavigator.data.dto.TeacherGroupDto
 import com.example.lawnavigator.data.dto.TestDto
 import com.example.lawnavigator.data.dto.TestResultDto
 import com.example.lawnavigator.data.dto.TopicDto
+import com.example.lawnavigator.data.dto.UpdateGroupRequestDto
 import com.example.lawnavigator.data.dto.UpdateLectureRequestDto
 import com.example.lawnavigator.data.dto.UpdateProgressRequest
 import com.example.lawnavigator.data.dto.UpdateTopicRequestDto
@@ -226,4 +227,12 @@ interface ContentApi {
         @Path("id") groupId: Int
     ): List<StudentRiskDto>
 
+    @PUT("api/groups/{id}")
+    suspend fun updateGroup(@Header("Authorization") token: String, @Path("id") id: Int, @Body req: UpdateGroupRequestDto)
+
+    @DELETE("api/groups/{id}")
+    suspend fun deleteGroup(@Header("Authorization") token: String, @Path("id") id: Int)
+
+    @DELETE("api/groups/{groupId}/students/{studentId}")
+    suspend fun removeStudent(@Header("Authorization") token: String, @Path("groupId") gId: Int, @Path("studentId") sId: Int)
 }

@@ -48,6 +48,7 @@ class TeacherGroupsViewModel @Inject constructor(
             is TeacherGroupsContract.Event.OnDisciplineSelected -> setState { copy(selectedDiscipline = event.discipline, isDropdownExpanded = false) }
 
             is TeacherGroupsContract.Event.OnConfirmCreateGroup -> createGroup()
+            else -> {}
         }
     }
 

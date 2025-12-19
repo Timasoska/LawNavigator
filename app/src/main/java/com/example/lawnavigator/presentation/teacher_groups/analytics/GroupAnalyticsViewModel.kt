@@ -26,6 +26,7 @@ class GroupAnalyticsViewModel @Inject constructor(
         when (event) {
             is GroupAnalyticsContract.Event.OnBackClicked -> setEffect { GroupAnalyticsContract.Effect.NavigateBack }
             is GroupAnalyticsContract.Event.OnRefresh -> loadData()
+            else -> {}
         }
     }
 

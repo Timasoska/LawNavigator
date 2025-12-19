@@ -15,6 +15,7 @@ class GroupAnalyticsContract {
     sealed class Event : ViewIntent {
         data object OnBackClicked : Event()
         data object OnRefresh : Event()
+        data class OnRemoveStudentClicked(val studentId: Int) : Event()
     }
 
     sealed class Effect : ViewSideEffect {

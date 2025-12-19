@@ -19,6 +19,37 @@ class ContentRepositoryImpl @Inject constructor(
     private val tokenManager: TokenManager
 ) : ContentRepository {
 
+    override suspend fun updateGroup(groupId: Int, name: String): Result<Unit> {
+        return try {
+            val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
+            // Нам нужен DTO. Если его нет - создай UpdateGroupRequestDto(name)
+            api.updateGroup("Bearer $token", groupId, UpdateGroupRequestDto(name))
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun deleteGroup(groupId: Int): Result<Unit> {
+        return try {
+            val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
+            api.deleteGroup("Bearer $token", groupId)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun removeStudent(groupId: Int, studentId: Int): Result<Unit> {
+        return try {
+            val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
+            api.removeStudent("Bearer $token", groupId, studentId)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     override suspend fun joinGroup(inviteCode: String): Result<Unit> {
         return try {
             val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
