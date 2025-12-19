@@ -8,35 +8,38 @@ import com.example.lawnavigator.presentation.theme.ThemeMode
 
 class ProfileContract {
 
-    /**
-     * Состояние экрана профиля.
-     */
     data class State(
-        val email: String = "student@example.com", // В идеале email тоже хранить в DataStore
+        val email: String = "",
         val analytics: UserAnalytics? = null,
         val isLoading: Boolean = false,
         val error: String? = null,
-        val themeMode: ThemeMode = ThemeMode.SYSTEM // <--- Добавили поле
+        val themeMode: ThemeMode = ThemeMode.SYSTEM,
+
+        // --- НОВЫЕ ПОЛЯ ---
+        val showJoinGroupDialog: Boolean = false,
+        val inviteCodeInput: String = ""
     ) : ViewState
 
-    /**
-     * Действия пользователя.
-     */
     sealed class Event : ViewIntent {
+        data object OnRefresh : Event()
         data object OnLogoutClicked : Event()
         data class OnRecommendationClicked(val topicId: Int) : Event()
-        data object NavigateBack : Effect() // <--- Добавили
-        data object OnBackClicked : Event() // <--- Добавили
-        data object OnRefresh : Event() // <--- Добавить
-        data class OnThemeChanged(val mode: ThemeMode) : Event() // <--- Событие
+        data object OnBackClicked : Event()
+        data class OnThemeChanged(val mode: ThemeMode) : Event()
+
+        // --- НОВЫЕ СОБЫТИЯ ---
+        data object OnJoinGroupClicked : Event() // Открыть диалог
+        data class OnInviteCodeChanged(val code: String) : Event() // Ввод текста
+        data object OnConfirmJoinGroup : Event() // Нажать "Вступить"
+        data object OnDismissDialog : Event() // Закрыть
     }
 
-    /**
-     * Эффекты (Навигация).
-     */
     sealed class Effect : ViewSideEffect {
         data object NavigateToLogin : Effect()
-        data object NavigateBack : Effect() // <--- Добавили
+        data object NavigateBack : Effect()
         data class NavigateToTopic(val topicId: Int) : Effect()
+
+        // --- НОВЫЙ ЭФФЕКТ ---
+        data class ShowMessage(val msg: String) : Effect()
     }
 }

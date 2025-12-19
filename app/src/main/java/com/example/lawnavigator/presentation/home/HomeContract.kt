@@ -10,15 +10,18 @@ class HomeContract {
     data class State(
         val disciplines: List<Discipline> = emptyList(),
         val isLoading: Boolean = false,
-        val error: String? = null
+        val error: String? = null,
+        val isTeacher: Boolean = false // <--- НОВОЕ ПОЛЕ
     ) : ViewState
 
     sealed class Event : ViewIntent {
         data object OnRetryClicked : Event()
         data class OnDisciplineClicked(val disciplineId: Int) : Event()
+        data object OnTeacherGroupsClicked : Event() // <--- НОВОЕ СОБЫТИЕ
     }
 
     sealed class Effect : ViewSideEffect {
         data class NavigateToTopics(val disciplineId: Int) : Effect()
+        data object NavigateToTeacherGroups : Effect() // <--- НОВЫЙ ЭФФЕКТ
     }
 }

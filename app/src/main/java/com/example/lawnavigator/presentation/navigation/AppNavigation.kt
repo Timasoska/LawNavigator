@@ -42,28 +42,6 @@ fun AppNavigation(
             )
         }
 
-        // HOME SCREEN
-        composable(Screen.Home.route) {
-            HomeScreen(
-                onNavigateToTopics = { disciplineId ->
-                    navController.navigate(Screen.Topics.createRoute(disciplineId))
-                },
-                onNavigateToProfile = {
-                    navController.navigate(Screen.Profile.route)
-                },
-                onNavigateToSearch = {
-                    navController.navigate(Screen.Search.route)
-                },
-                // ПЕРЕХОД В ИЗБРАННОЕ
-                onNavigateToFavorites = {
-                    navController.navigate(Screen.Favorites.route)
-                },
-                onNavigateToLeaderboard = {
-                    navController.navigate(Screen.Leaderboard.route)
-                }
-            )
-        }
-
         // Topics
         composable(
             route = Screen.Topics.route,
@@ -251,5 +229,39 @@ fun AppNavigation(
                 }
             )
         }
+        composable(Screen.TeacherGroups.route) {
+            com.example.lawnavigator.presentation.teacher_groups.TeacherGroupsScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToAnalytics = { groupId ->
+                    // Переход к аналитике (следующий шаг)
+                    // navController.navigate(Screen.GroupAnalytics.createRoute(groupId))
+                }
+            )
+        }
+        // HOME SCREEN
+        composable(Screen.Home.route) {
+            HomeScreen(
+                onNavigateToTopics = { disciplineId ->
+                    navController.navigate(Screen.Topics.createRoute(disciplineId))
+                },
+                onNavigateToProfile = {
+                    navController.navigate(Screen.Profile.route)
+                },
+                onNavigateToSearch = {
+                    navController.navigate(Screen.Search.route)
+                },
+                onNavigateToFavorites = {
+                    navController.navigate(Screen.Favorites.route)
+                },
+                onNavigateToLeaderboard = {
+                    navController.navigate(Screen.Leaderboard.route)
+                },
+                // --- НОВЫЙ КОЛБЭК ---
+                onNavigateToTeacherGroups = {
+                    navController.navigate(Screen.TeacherGroups.route)
+                }
+            )
+        }
+
     }
 }

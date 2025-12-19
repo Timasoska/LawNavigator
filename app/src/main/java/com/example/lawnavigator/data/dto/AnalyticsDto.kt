@@ -12,7 +12,8 @@ data class ProgressDto(
     val averageScore: Double,
     val history: List<Int> = emptyList(), // <--- ДОБАВЬ ЭТУ СТРОКУ
     val trend: Double, // <--- Добавили
-    val disciplines: List<DisciplineStatDto> = emptyList()
+    val disciplines: List<DisciplineStatDto> = emptyList(),
+    val groups: List<String> = emptyList()
 )
 
 @Serializable

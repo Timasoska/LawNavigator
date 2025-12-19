@@ -1,6 +1,8 @@
 package com.example.lawnavigator.domain.repository
 
+import com.example.lawnavigator.data.dto.StudentRiskDto
 import com.example.lawnavigator.data.dto.SubmitAnswerRequest
+import com.example.lawnavigator.data.dto.TeacherGroupDto
 import com.example.lawnavigator.data.dto.TestResultDto
 import com.example.lawnavigator.domain.model.Discipline
 import com.example.lawnavigator.domain.model.LeaderboardUser
@@ -43,5 +45,9 @@ interface ContentRepository {
     suspend fun deleteTopic(topicId: Int): Result<Unit>
     suspend fun attachFile(lectureId: Int, fileBytes: ByteArray, fileName: String): Result<Unit>
 
+    suspend fun joinGroup(inviteCode: String): Result<Unit>
+    suspend fun createGroup(name: String, disciplineId: Int): Result<String>
+    suspend fun getTeacherGroups(): Result<List<TeacherGroupDto>>
+    suspend fun getGroupAnalytics(groupId: Int): Result<List<StudentRiskDto>>
 }
 

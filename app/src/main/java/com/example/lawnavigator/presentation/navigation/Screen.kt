@@ -40,4 +40,6 @@ sealed class Screen(val route: String) {
             else "test_creator?lectureId=$lectureId"
         }
     }
+
+    data object TeacherGroups : Screen("teacher_groups")
 }

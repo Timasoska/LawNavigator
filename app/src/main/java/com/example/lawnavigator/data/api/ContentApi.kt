@@ -1,14 +1,19 @@
 package com.example.lawnavigator.data.api
 
 import com.example.lawnavigator.data.dto.AdminTestResponseDto
+import com.example.lawnavigator.data.dto.CreateGroupRequestDto
 import com.example.lawnavigator.data.dto.DisciplineDto
+import com.example.lawnavigator.data.dto.InviteCodeResponse
+import com.example.lawnavigator.data.dto.JoinGroupRequestDto
 import com.example.lawnavigator.data.dto.LeaderboardItemDto
 import com.example.lawnavigator.data.dto.LectureDto
 import com.example.lawnavigator.data.dto.LectureProgressDto
 import com.example.lawnavigator.data.dto.ProgressDto
 import com.example.lawnavigator.data.dto.SaveTestRequestDto
 import com.example.lawnavigator.data.dto.SaveTopicRequestDto
+import com.example.lawnavigator.data.dto.StudentRiskDto
 import com.example.lawnavigator.data.dto.SubmitAnswerRequest
+import com.example.lawnavigator.data.dto.TeacherGroupDto
 import com.example.lawnavigator.data.dto.TestDto
 import com.example.lawnavigator.data.dto.TestResultDto
 import com.example.lawnavigator.data.dto.TopicDto
@@ -196,5 +201,29 @@ interface ContentApi {
      */
     @GET("api/analytics/recommendations")
     suspend fun getRecommendations(@Header("Authorization") token: String): List<TopicDto>
+
+    // ГРУППЫ
+    @POST("api/groups/join")
+    suspend fun joinGroup(
+        @Header("Authorization") token: String,
+        @Body request: JoinGroupRequestDto
+    )
+
+    @POST("api/groups")
+    suspend fun createGroup(
+        @Header("Authorization") token: String,
+        @Body request: CreateGroupRequestDto
+    ): InviteCodeResponse
+
+    @GET("api/groups/my")
+    suspend fun getTeacherGroups(
+        @Header("Authorization") token: String
+    ): List<TeacherGroupDto>
+
+    @GET("api/groups/{id}/analytics")
+    suspend fun getGroupAnalytics(
+        @Header("Authorization") token: String,
+        @Path("id") groupId: Int
+    ): List<StudentRiskDto>
 
 }

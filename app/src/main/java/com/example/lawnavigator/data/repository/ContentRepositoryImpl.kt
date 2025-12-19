@@ -19,6 +19,48 @@ class ContentRepositoryImpl @Inject constructor(
     private val tokenManager: TokenManager
 ) : ContentRepository {
 
+    override suspend fun joinGroup(inviteCode: String): Result<Unit> {
+        return try {
+            val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
+            // Отправляем DTO на сервер
+            api.joinGroup("Bearer $token", JoinGroupRequestDto(inviteCode))
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun createGroup(name: String, disciplineId: Int): Result<String> {
+        return try {
+            val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
+            // Сервер возвращает объект с inviteCode
+            val response = api.createGroup("Bearer $token", CreateGroupRequestDto(name, disciplineId))
+            Result.success(response.inviteCode)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getTeacherGroups(): Result<List<TeacherGroupDto>> {
+        return try {
+            val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
+            val groups = api.getTeacherGroups("Bearer $token")
+            Result.success(groups)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getGroupAnalytics(groupId: Int): Result<List<StudentRiskDto>> {
+        return try {
+            val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
+            val analytics = api.getGroupAnalytics("Bearer $token", groupId)
+            Result.success(analytics)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     override suspend fun attachFile(lectureId: Int, fileBytes: ByteArray, fileName: String): Result<Unit> {
         return try {
             val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))

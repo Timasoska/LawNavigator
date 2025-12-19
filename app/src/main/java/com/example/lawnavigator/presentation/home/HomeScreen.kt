@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -33,7 +34,8 @@ fun HomeScreen(
     onNavigateToProfile: () -> Unit, // <--- Добавляем новый колбэк
     onNavigateToSearch: () -> Unit, // <--- 1. ДОБАВЛЯЕМ ЭТОТ ПАРАМЕТР
     onNavigateToFavorites: () -> Unit, // <--- 1. НОВЫЙ ПАРАМЕТР
-    onNavigateToLeaderboard: () -> Unit // <--- Новый параметр
+    onNavigateToLeaderboard: () -> Unit, // <--- Новый параметр
+    onNavigateToTeacherGroups: () -> Unit // <--- НОВЫЙ КОЛБЭК
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -42,6 +44,8 @@ fun HomeScreen(
         viewModel.effect.collectLatest { effect ->
             when (effect) {
                 is HomeContract.Effect.NavigateToTopics -> onNavigateToTopics(effect.disciplineId)
+                // Обработка навигации
+                is HomeContract.Effect.NavigateToTeacherGroups -> onNavigateToTeacherGroups()
             }
         }
     }
@@ -69,6 +73,13 @@ fun HomeScreen(
                     // Профиль
                     IconButton(onClick = onNavigateToProfile) {
                         Icon(Icons.Default.Person, contentDescription = "Профиль")
+                    }
+
+                    // --- КНОПКА ГРУПП (Только для учителя) ---
+                    if (state.isTeacher) {
+                        IconButton(onClick = { viewModel.setEvent(HomeContract.Event.OnTeacherGroupsClicked) }) {
+                            Icon(Icons.Default.Group, contentDescription = "Мои группы")
+                        }
                     }
                 }
             )

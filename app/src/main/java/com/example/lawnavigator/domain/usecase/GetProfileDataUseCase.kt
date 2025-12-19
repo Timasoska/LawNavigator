@@ -30,6 +30,7 @@ class GetProfileDataUseCase @Inject constructor(
                 trend = progressDto.trend,
 
                 history = progressDto.history, // <--- ДОБАВЬ ЭТУ СТРОКУ
+                groups = progressDto.groups,
 
                 disciplines = progressDto.disciplines.map {
                     DisciplineStat(it.name, it.averageScore, it.trend)
