@@ -126,19 +126,16 @@ fun LecturesListScreen(
                                     Row(verticalAlignment = Alignment.CenterVertically) {
 
                                         // --- ОТОБРАЖЕНИЕ БАЛЛОВ ---
+                                        // 1. ПРОЦЕНТЫ (Только один раз!)
                                         if (lecture.userScore != null) {
-                                            // Выбираем цвет: Зеленый (>=60) или Желтый
-                                            val scoreColor = if (lecture.userScore >= 60)
-                                                Color(0xFF4CAF50) // Green
-                                            else
-                                                Color(0xFFFFC107) // Amber
-
+                                            val score = lecture.userScore
+                                            val color = if (score >= 60) Color(0xFF4CAF50) else Color(0xFFFFC107)
                                             Text(
-                                                text = "${lecture.userScore}%",
-                                                style = MaterialTheme.typography.labelMedium,
+                                                text = "$score%",
+                                                style = MaterialTheme.typography.labelLarge,
                                                 fontWeight = FontWeight.Bold,
-                                                color = scoreColor,
-                                                modifier = Modifier.padding(end = 8.dp)
+                                                color = color,
+                                                modifier = Modifier.padding(end = 12.dp)
                                             )
                                         }
 

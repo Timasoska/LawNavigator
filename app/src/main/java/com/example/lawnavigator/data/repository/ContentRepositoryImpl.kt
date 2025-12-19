@@ -258,7 +258,7 @@ class ContentRepositoryImpl @Inject constructor(
         return try {
             val token = tokenManager.token.first() ?: return Result.failure(Exception("Not authorized"))
             val dtos = api.getTopics("Bearer $token", disciplineId)
-            val topics = dtos.map { Topic(it.id, it.name, it.disciplineId) }
+            val topics = dtos.map { Topic(it.id, it.name, it.disciplineId, it.progress)}
             Result.success(topics)
         } catch (e: Exception) { Result.failure(e) }
     }
@@ -276,7 +276,7 @@ class ContentRepositoryImpl @Inject constructor(
                 hasTest = dto.hasTest,
                 userScore = dto.userScore,
                 files = dto.files.map { fileDto ->
-                    com.example.lawnavigator.domain.model.LectureFile(
+                    LectureFile(
                         id = fileDto.id,
                         title = fileDto.title,
                         url = fileDto.url

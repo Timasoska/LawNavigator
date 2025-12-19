@@ -2,9 +2,13 @@ package com.example.lawnavigator.presentation.topics
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -43,6 +47,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.FloatingActionButton
+
+
 /**
  * Экран отображения списка тем по выбранной дисциплине.
  *
@@ -168,7 +174,32 @@ fun TopicsScreen(
                     LazyColumn {
                         items(state.topics) { topic ->
                             ListItem(
-                                headlineContent = { Text(topic.name) },
+                                headlineContent = {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = topic.name,
+                                            modifier = Modifier.weight(1f)
+                                        )
+
+                                        // --- ОТОБРАЖЕНИЕ ОЦЕНКИ ЗА ТЕМУ (ЦВЕТНОЙ ТЕКСТ) ---
+                                        if (topic.progress != null) {
+
+                                            // Если 0 - тоже показываем (Красным)
+                                            val color = if (topic.progress >= 60)
+                                                MaterialTheme.colorScheme.primary
+                                            else
+                                                MaterialTheme.colorScheme.error
+
+                                            Text(
+                                                text = "${topic.progress}%",
+                                                style = MaterialTheme.typography.labelLarge,
+                                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                                                color = color,
+                                                modifier = Modifier.padding(start = 8.dp)
+                                            )
+                                        }
+                                    }
+                                },
                                 modifier = Modifier.clickable {
                                     viewModel.setEvent(TopicsContract.Event.OnTopicClicked(topic.id))
                                 },

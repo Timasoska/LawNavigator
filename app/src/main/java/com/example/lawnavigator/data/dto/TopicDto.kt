@@ -16,5 +16,6 @@ data class TopicDto(
 data class TopicDto(
     val id: Int,
     val name: String,
-    val disciplineId: Int
+    val disciplineId: Int,
+    val progress: Int? = null // <--- Int?
 )

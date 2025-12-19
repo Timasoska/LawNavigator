@@ -35,5 +35,6 @@ class TestContract {
 
     sealed class Effect : ViewSideEffect {
         data object NavigateBack : Effect()
+        data class ShowMessage(val msg: String) : Effect()
     }
 }

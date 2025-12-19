@@ -142,24 +142,36 @@ class TestViewModel @Inject constructor(
     }
 
     private fun submitTest() {
-        stopTimer() // Останавливаем таймер
+        stopTimer()
         val testId = currentState.test?.id ?: return
         setState { copy(isLoading = true) }
 
+        // ЛОГ: Начало отправки
+        android.util.Log.d("TestVM", "Submitting test ID: $testId with answers: ${currentState.selectedAnswers}")
+
         viewModelScope.launch {
+            // UserId берется из токена на сервере, здесь передаем заглушку 0
             submitTestUseCase(0, testId, currentState.selectedAnswers)
                 .onSuccess { result ->
+                    android.util.Log.d("TestVM", "Submit success! Score: ${result.score}")
                     setState {
                         copy(
                             isLoading = false,
                             resultScore = result.score,
                             resultMessage = result.message,
                             correctAnswersMap = result.correctAnswers,
-                            timeLeft = null // Прячем таймер
+                            timeLeft = null
                         )
                     }
                 }
-                .onFailure { setState { copy(isLoading = false) } }
+                .onFailure { error ->
+                    // ЛОГ: Ошибка
+                    android.util.Log.e("TestVM", "Submit FAILED: ${error.message}", error)
+
+                    setState { copy(isLoading = false) }
+                    // Теперь ShowMessage существует и ошибки не будет
+                    setEffect { TestContract.Effect.ShowMessage("Ошибка отправки: ${error.message}") }
+                }
         }
     }
 
