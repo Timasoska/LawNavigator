@@ -5,6 +5,7 @@ import com.example.lawnavigator.core.mvi.ViewIntent
 import com.example.lawnavigator.core.mvi.ViewSideEffect
 import com.example.lawnavigator.core.mvi.ViewState
 import com.example.lawnavigator.data.dto.TeacherGroupDto
+import com.example.lawnavigator.domain.model.Discipline
 
 class TeacherGroupsContract {
     data class State(
@@ -12,24 +13,30 @@ class TeacherGroupsContract {
         val isLoading: Boolean = false,
         val error: String? = null,
 
-        // Диалог создания
+        // --- ДЛЯ ДИАЛОГА СОЗДАНИЯ ---
         val showCreateDialog: Boolean = false,
         val newGroupName: String = "",
-        val selectedDisciplineId: Int = 1 // Пока хардкод или загрузим список дисциплин
+
+        // Выбор дисциплины
+        val availableDisciplines: List<Discipline> = emptyList(), // Список для выбора
+        val selectedDiscipline: Discipline? = null,              // Выбранная
+        val isDropdownExpanded: Boolean = false                  // Открыто ли меню
     ) : ViewState
 
     sealed class Event : ViewIntent {
         data object OnBackClicked : Event()
         data object OnRefresh : Event()
+        data class OnGroupClicked(val groupId: Int) : Event()
 
-        // Создание группы
+        // Диалог
         data object OnCreateGroupClicked : Event()
         data object OnDismissDialog : Event()
         data class OnGroupNameChanged(val name: String) : Event()
         data object OnConfirmCreateGroup : Event()
 
-        // Переход к аналитике
-        data class OnGroupClicked(val groupId: Int) : Event()
+        // Выпадающий список
+        data class OnDisciplineSelected(val discipline: Discipline) : Event()
+        data class OnDropdownExpanded(val isExpanded: Boolean) : Event()
     }
 
     sealed class Effect : ViewSideEffect {

@@ -263,5 +263,24 @@ fun AppNavigation(
             )
         }
 
+        composable(
+            route = Screen.GroupAnalytics.route,
+            arguments = listOf(navArgument("groupId") { type = NavType.IntType })
+        ) {
+            com.example.lawnavigator.presentation.teacher_groups.analytics.GroupAnalyticsScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // ... в TeacherGroups ...
+        composable(Screen.TeacherGroups.route) {
+            com.example.lawnavigator.presentation.teacher_groups.TeacherGroupsScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToAnalytics = { groupId ->
+                    navController.navigate(Screen.GroupAnalytics.createRoute(groupId))
+                }
+            )
+        }
+
     }
 }

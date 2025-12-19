@@ -51,9 +51,39 @@ fun TeacherGroupsScreen(
                     OutlinedTextField(
                         value = state.newGroupName,
                         onValueChange = { viewModel.setEvent(TeacherGroupsContract.Event.OnGroupNameChanged(it)) },
-                        label = { Text("Название группы") }
+                        label = { Text("Название группы") },
+                        modifier = Modifier.fillMaxWidth()
                     )
-                    Text("Дисциплина: Уголовное право (ID: 1)", style = MaterialTheme.typography.bodySmall)
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // --- ВЫПАДАЮЩИЙ СПИСОК ---
+                    ExposedDropdownMenuBox(
+                        expanded = state.isDropdownExpanded,
+                        onExpandedChange = { viewModel.setEvent(TeacherGroupsContract.Event.OnDropdownExpanded(it)) }
+                    ) {
+                        OutlinedTextField(
+                            value = state.selectedDiscipline?.name ?: "Выберите предмет",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Предмет") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.isDropdownExpanded) },
+                            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                            modifier = Modifier.menuAnchor().fillMaxWidth()
+                        )
+
+                        ExposedDropdownMenu(
+                            expanded = state.isDropdownExpanded,
+                            onDismissRequest = { viewModel.setEvent(TeacherGroupsContract.Event.OnDropdownExpanded(false)) }
+                        ) {
+                            state.availableDisciplines.forEach { item ->
+                                DropdownMenuItem(
+                                    text = { Text(text = item.name) },
+                                    onClick = { viewModel.setEvent(TeacherGroupsContract.Event.OnDisciplineSelected(item)) }
+                                )
+                            }
+                        }
+                    }
                 }
             },
             confirmButton = {
