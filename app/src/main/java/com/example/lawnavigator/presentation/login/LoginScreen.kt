@@ -3,6 +3,9 @@ package com.example.lawnavigator.presentation.login
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -13,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.flow.collectLatest
@@ -25,18 +29,14 @@ fun LoginScreen(
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
 
-    // Обработка Эффектов (Навигация, Тосты)
     LaunchedEffect(key1 = true) {
         viewModel.effect.collectLatest { effect ->
             when (effect) {
-                is LoginContract.Effect.NavigateToHome -> {
-                    onNavigateToHome()
-                }
+                is LoginContract.Effect.NavigateToHome -> onNavigateToHome()
             }
         }
     }
 
-    // Если есть ошибка, показываем Toast и сбрасываем её
     if (state.error != null) {
         LaunchedEffect(state.error) {
             Toast.makeText(context, state.error, Toast.LENGTH_SHORT).show()
@@ -63,12 +63,22 @@ fun LoginScreen(
                 singleLine = true
             )
 
+            // ПОЛЕ ПАРОЛЯ С ГЛАЗОМ
             OutlinedTextField(
                 value = state.password,
                 onValueChange = { viewModel.setEvent(LoginContract.Event.OnPasswordChanged(it)) },
                 label = { Text("Пароль") },
                 modifier = Modifier.fillMaxWidth(),
-                visualTransformation = PasswordVisualTransformation(),
+                // Если true - текст виден, если false - точки
+                visualTransformation = if (state.isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    IconButton(onClick = { viewModel.setEvent(LoginContract.Event.OnTogglePasswordVisibility) }) {
+                        val icon = if (state.isPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility
+                        val description = if (state.isPasswordVisible) "Скрыть пароль" else "Показать пароль"
+                        Icon(imageVector = icon, contentDescription = description)
+                    }
+                },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 singleLine = true
             )
 

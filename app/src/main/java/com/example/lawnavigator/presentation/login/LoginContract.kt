@@ -6,24 +6,25 @@ import com.example.lawnavigator.core.mvi.ViewState
 
 class LoginContract {
 
-    // Состояние: Данные, которые мы рисуем
+    // Состояние: Добавили флаг видимости пароля
     data class State(
         val email: String = "",
         val password: String = "",
+        val isPasswordVisible: Boolean = false, // <--- НОВОЕ ПОЛЕ
         val isLoading: Boolean = false,
         val error: String? = null
     ) : ViewState
 
-    // Намерения: Действия пользователя
+    // Намерения: Добавили событие переключения
     sealed class Event : ViewIntent {
         data class OnEmailChanged(val email: String) : Event()
         data class OnPasswordChanged(val password: String) : Event()
+        data object OnTogglePasswordVisibility : Event() // <--- НОВОЕ СОБЫТИЕ
         data object OnLoginClicked : Event()
         data object OnRegisterClicked : Event()
-        data object OnErrorShown : Event() // Сброс ошибки (например, после показа Snackbar)
+        data object OnErrorShown : Event()
     }
 
-    // Эффекты: Навигация
     sealed class Effect : ViewSideEffect {
         data object NavigateToHome : Effect()
     }

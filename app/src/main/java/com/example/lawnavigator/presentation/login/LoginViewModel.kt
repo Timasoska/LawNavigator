@@ -8,6 +8,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val loginUseCase: LoginUseCase,
@@ -24,6 +25,12 @@ class LoginViewModel @Inject constructor(
             is LoginContract.Event.OnPasswordChanged -> {
                 setState { copy(password = event.password, error = null) }
             }
+            // Логика переключения глаза
+            is LoginContract.Event.OnTogglePasswordVisibility -> {
+                val currentVisibility = currentState.isPasswordVisible
+                android.util.Log.d("LoginVM", "Toggle password visibility to: ${!currentVisibility}")
+                setState { copy(isPasswordVisible = !currentVisibility) }
+            }
             is LoginContract.Event.OnLoginClicked -> login()
             is LoginContract.Event.OnRegisterClicked -> register()
             is LoginContract.Event.OnErrorShown -> {
@@ -37,19 +44,11 @@ class LoginViewModel @Inject constructor(
         viewModelScope.launch {
             val email = currentState.email
             val password = currentState.password
-
-            // Вызываем UseCase
             val result = loginUseCase(email, password)
-
             setState { copy(isLoading = false) }
-
             result.fold(
-                onSuccess = {
-                    setEffect { LoginContract.Effect.NavigateToHome }
-                },
-                onFailure = { error ->
-                    setState { copy(error = error.message ?: "Ошибка входа") }
-                }
+                onSuccess = { setEffect { LoginContract.Effect.NavigateToHome } },
+                onFailure = { error -> setState { copy(error = error.message ?: "Ошибка входа") } }
             )
         }
     }
@@ -59,15 +58,9 @@ class LoginViewModel @Inject constructor(
         viewModelScope.launch {
             val result = registerUseCase(currentState.email, currentState.password)
             setState { copy(isLoading = false) }
-
             result.fold(
-                onSuccess = {
-                    // После успешной регистрации сразу пускаем внутрь
-                    setEffect { LoginContract.Effect.NavigateToHome }
-                },
-                onFailure = { error ->
-                    setState { copy(error = error.message ?: "Ошибка регистрации") }
-                }
+                onSuccess = { setEffect { LoginContract.Effect.NavigateToHome } },
+                onFailure = { error -> setState { copy(error = error.message ?: "Ошибка регистрации") } }
             )
         }
     }
