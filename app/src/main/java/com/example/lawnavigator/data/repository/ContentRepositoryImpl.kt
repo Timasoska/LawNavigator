@@ -500,4 +500,28 @@ class ContentRepositoryImpl @Inject constructor(
     } catch (e: Exception) {
         Result.failure(e)
     }
+
+    // --- FLASHCARDS ---
+    override suspend fun getDueFlashcards(): Result<List<Flashcard>> = try {
+        val token = tokenManager.token.first() ?: throw Exception("No token")
+        val dtos = api.getDueFlashcards("Bearer $token")
+        val cards = dtos.map { dto ->
+            Flashcard(
+                id = dto.questionId,
+                question = dto.text,
+                options = dto.options.map { FlashcardOption(it.id, it.text, it.isCorrect) }
+            )
+        }
+        Result.success(cards)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    override suspend fun reviewFlashcard(questionId: Int, quality: Int): Result<Unit> = try {
+        val token = tokenManager.token.first() ?: throw Exception("No token")
+        api.reviewFlashcard("Bearer $token", ReviewFlashcardRequestDto(questionId, quality))
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
 }

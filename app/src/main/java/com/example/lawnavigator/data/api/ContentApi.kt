@@ -3,12 +3,14 @@ package com.example.lawnavigator.data.api
 import com.example.lawnavigator.data.dto.AdminTestResponseDto
 import com.example.lawnavigator.data.dto.CreateGroupRequestDto
 import com.example.lawnavigator.data.dto.DisciplineDto
+import com.example.lawnavigator.data.dto.FlashcardDto
 import com.example.lawnavigator.data.dto.InviteCodeResponse
 import com.example.lawnavigator.data.dto.JoinGroupRequestDto
 import com.example.lawnavigator.data.dto.LeaderboardItemDto
 import com.example.lawnavigator.data.dto.LectureDto
 import com.example.lawnavigator.data.dto.LectureProgressDto
 import com.example.lawnavigator.data.dto.ProgressDto
+import com.example.lawnavigator.data.dto.ReviewFlashcardRequestDto
 import com.example.lawnavigator.data.dto.SaveTestRequestDto
 import com.example.lawnavigator.data.dto.SaveTopicRequestDto
 import com.example.lawnavigator.data.dto.StudentDetailedReportDto
@@ -37,6 +39,13 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ContentApi {
+
+    // --- FLASHCARDS ---
+    @GET("api/flashcards/due")
+    suspend fun getDueFlashcards(@Header("Authorization") token: String): List<FlashcardDto>
+
+    @POST("api/flashcards/review")
+    suspend fun reviewFlashcard(@Header("Authorization") token: String, @Body request: ReviewFlashcardRequestDto)
 
     @GET("api/groups/{groupId}/student/{studentId}/report")
     suspend fun getStudentReport(

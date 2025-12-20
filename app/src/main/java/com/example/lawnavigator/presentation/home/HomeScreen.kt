@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -35,7 +36,8 @@ fun HomeScreen(
     onNavigateToSearch: () -> Unit, // <--- 1. ДОБАВЛЯЕМ ЭТОТ ПАРАМЕТР
     onNavigateToFavorites: () -> Unit, // <--- 1. НОВЫЙ ПАРАМЕТР
     onNavigateToLeaderboard: () -> Unit, // <--- Новый параметр
-    onNavigateToTeacherGroups: () -> Unit // <--- НОВЫЙ КОЛБЭК
+    onNavigateToTeacherGroups: () -> Unit, // <--- НОВЫЙ КОЛБЭК
+    onNavigateToFlashcards: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -55,6 +57,9 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text("Дисциплины") },
                 actions = {
+                    IconButton(onClick = onNavigateToFlashcards) {
+                        Icon(Icons.Default.Refresh, contentDescription = "Повторение")
+                    }
                     // Поиск
                     IconButton(onClick = onNavigateToSearch) {
                         Icon(Icons.Default.Search, contentDescription = "Поиск")

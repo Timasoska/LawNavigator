@@ -221,12 +221,12 @@ fun AppNavigation(
                 }
             )
         }
+        // Teacher Groups
         composable(Screen.TeacherGroups.route) {
             com.example.lawnavigator.presentation.teacher_groups.TeacherGroupsScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToAnalytics = { groupId ->
-                    // Переход к аналитике (следующий шаг)
-                    // navController.navigate(Screen.GroupAnalytics.createRoute(groupId))
+                    navController.navigate(Screen.GroupAnalytics.createRoute(groupId))
                 }
             )
         }
@@ -251,6 +251,10 @@ fun AppNavigation(
                 // --- НОВЫЙ КОЛБЭК ---
                 onNavigateToTeacherGroups = {
                     navController.navigate(Screen.TeacherGroups.route)
+                },
+                // --- ПЕРЕХОД К КАРТОЧКАМ ---
+                onNavigateToFlashcards = {
+                    navController.navigate(Screen.Flashcards.route)
                 }
             )
         }
@@ -298,6 +302,12 @@ fun AppNavigation(
             )
         ) {
             StudentReportScreen(onNavigateBack = { navController.popBackStack() })
+        }
+
+        composable(Screen.Flashcards.route) {
+            com.example.lawnavigator.presentation.flashcards.FlashcardsScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
 
     }
