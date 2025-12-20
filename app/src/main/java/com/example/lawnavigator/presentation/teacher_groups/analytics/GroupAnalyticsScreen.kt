@@ -1,5 +1,6 @@
 package com.example.lawnavigator.presentation.teacher_groups.analytics
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -31,11 +33,15 @@ fun GroupAnalyticsScreen(
     onNavigateBack: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
+    val context = LocalContext.current // <--- Контекст для Toast
 
     LaunchedEffect(true) {
         viewModel.effect.collectLatest { effect ->
             when (effect) {
                 is GroupAnalyticsContract.Effect.NavigateBack -> onNavigateBack()
+                is GroupAnalyticsContract.Effect.ShowMessage -> { // <--- Обработка сообщения
+                    Toast.makeText(context, effect.msg, Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -63,12 +69,10 @@ fun GroupAnalyticsScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                 }
 
-                // ИСПОЛЬЗУЕМ СПИСОК СТУДЕНТОВ ИЗ STATE
                 items(state.students) { student ->
                     StudentCard(
                         student = student,
                         onRemoveClick = {
-                            // Вызываем событие удаления (нужно добавить его в контракт, если нет)
                             viewModel.setEvent(GroupAnalyticsContract.Event.OnRemoveStudentClicked(student.studentId))
                         }
                     )
@@ -106,7 +110,6 @@ fun StudentCard(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Индикатор риска (Кружочек)
             Box(
                 modifier = Modifier
                     .size(16.dp)
@@ -125,12 +128,10 @@ fun StudentCard(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // Тренд (Стрелочка)
             MiniTrendIndicator(trend = student.trend)
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // Кнопка удаления
             IconButton(onClick = onRemoveClick) {
                 Icon(Icons.Default.Close, contentDescription = "Исключить", tint = Color.Gray)
             }

@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
@@ -41,6 +42,24 @@ fun TeacherGroupsScreen(
         }
     }
 
+    // --- ДИАЛОГ УДАЛЕНИЯ (НОВОЕ) ---
+    if (state.showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.setEvent(TeacherGroupsContract.Event.OnDismissDialog) },
+            title = { Text("Удалить группу?") },
+            text = { Text("Все данные об обучении студентов в этой группе будут отвязаны. Это действие нельзя отменить.") },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.setEvent(TeacherGroupsContract.Event.OnConfirmDeleteGroup) },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) { Text("Удалить") }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.setEvent(TeacherGroupsContract.Event.OnDismissDialog) }) { Text("Отмена") }
+            }
+        )
+    }
+
     // Диалог создания
     if (state.showCreateDialog) {
         AlertDialog(
@@ -54,10 +73,7 @@ fun TeacherGroupsScreen(
                         label = { Text("Название группы") },
                         modifier = Modifier.fillMaxWidth()
                     )
-
                     Spacer(modifier = Modifier.height(16.dp))
-
-                    // --- ВЫПАДАЮЩИЙ СПИСОК ---
                     ExposedDropdownMenuBox(
                         expanded = state.isDropdownExpanded,
                         onExpandedChange = { viewModel.setEvent(TeacherGroupsContract.Event.OnDropdownExpanded(it)) }
@@ -71,7 +87,6 @@ fun TeacherGroupsScreen(
                             colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
                             modifier = Modifier.menuAnchor().fillMaxWidth()
                         )
-
                         ExposedDropdownMenu(
                             expanded = state.isDropdownExpanded,
                             onDismissRequest = { viewModel.setEvent(TeacherGroupsContract.Event.OnDropdownExpanded(false)) }
@@ -87,14 +102,10 @@ fun TeacherGroupsScreen(
                 }
             },
             confirmButton = {
-                Button(onClick = { viewModel.setEvent(TeacherGroupsContract.Event.OnConfirmCreateGroup) }) {
-                    Text("Создать")
-                }
+                Button(onClick = { viewModel.setEvent(TeacherGroupsContract.Event.OnConfirmCreateGroup) }) { Text("Создать") }
             },
             dismissButton = {
-                TextButton(onClick = { viewModel.setEvent(TeacherGroupsContract.Event.OnDismissDialog) }) {
-                    Text("Отмена")
-                }
+                TextButton(onClick = { viewModel.setEvent(TeacherGroupsContract.Event.OnDismissDialog) }) { Text("Отмена") }
             }
         )
     }
@@ -131,21 +142,36 @@ fun TeacherGroupsScreen(
                         elevation = CardDefaults.cardElevation(2.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Group, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = group.name,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                    Icon(Icons.Default.Group, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = group.name,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+
+                                // КНОПКА УДАЛЕНИЯ ГРУППЫ
+                                IconButton(onClick = { viewModel.setEvent(TeacherGroupsContract.Event.OnDeleteGroupClicked(group.id)) }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Удалить группу",
+                                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
+                                    )
+                                }
                             }
+
                             Spacer(modifier = Modifier.height(8.dp))
                             Text("Предмет: ${group.disciplineName}")
                             Text("Студентов: ${group.studentCount}")
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            // Код приглашения (Крупно)
                             Card(
                                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
                                 modifier = Modifier.fillMaxWidth()

@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.example.lawnavigator.core.mvi.BaseViewModel
 import com.example.lawnavigator.domain.usecase.GetAnalyticsUseCase
+import com.example.lawnavigator.domain.usecase.RemoveStudentUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -11,6 +12,7 @@ import javax.inject.Inject
 @HiltViewModel
 class GroupAnalyticsViewModel @Inject constructor(
     private val getAnalyticsUseCase: GetAnalyticsUseCase,
+    private val removeStudentUseCase: RemoveStudentUseCase, // <--- Внедряем UseCase
     savedStateHandle: SavedStateHandle
 ) : BaseViewModel<GroupAnalyticsContract.State, GroupAnalyticsContract.Event, GroupAnalyticsContract.Effect>() {
 
@@ -26,12 +28,12 @@ class GroupAnalyticsViewModel @Inject constructor(
         when (event) {
             is GroupAnalyticsContract.Event.OnBackClicked -> setEffect { GroupAnalyticsContract.Effect.NavigateBack }
             is GroupAnalyticsContract.Event.OnRefresh -> loadData()
-            else -> {}
+            is GroupAnalyticsContract.Event.OnRemoveStudentClicked -> removeStudent(event.studentId) // <--- Обрабатываем нажатие
         }
     }
 
     private fun loadData() {
-        setState { copy(isLoading = true) }
+        setState { copy(isLoading = true, error = null) }
         viewModelScope.launch {
             getAnalyticsUseCase.getAnalytics(groupId)
                 .onSuccess { list ->
@@ -39,6 +41,24 @@ class GroupAnalyticsViewModel @Inject constructor(
                 }
                 .onFailure {
                     setState { copy(isLoading = false, error = it.message) }
+                }
+        }
+    }
+
+    private fun removeStudent(studentId: Int) {
+        // Логируем для отладки
+        android.util.Log.d("AnalyticsVM", "Removing student $studentId from group $groupId")
+
+        setState { copy(isLoading = true) }
+        viewModelScope.launch {
+            removeStudentUseCase(groupId, studentId)
+                .onSuccess {
+                    setEffect { GroupAnalyticsContract.Effect.ShowMessage("Студент исключен из группы") }
+                    loadData() // Перезагружаем список, чтобы студент исчез из UI
+                }
+                .onFailure { error ->
+                    setState { copy(isLoading = false) }
+                    setEffect { GroupAnalyticsContract.Effect.ShowMessage("Ошибка: ${error.localizedMessage}") }
                 }
         }
     }

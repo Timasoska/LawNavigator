@@ -18,9 +18,13 @@ class TeacherGroupsContract {
         val newGroupName: String = "",
 
         // Выбор дисциплины
-        val availableDisciplines: List<Discipline> = emptyList(), // Список для выбора
-        val selectedDiscipline: Discipline? = null,              // Выбранная
-        val isDropdownExpanded: Boolean = false                  // Открыто ли меню
+        val availableDisciplines: List<Discipline> = emptyList(),
+        val selectedDiscipline: Discipline? = null,
+        val isDropdownExpanded: Boolean = false,
+
+        // --- ДЛЯ ДИАЛОГА УДАЛЕНИЯ (НОВОЕ) ---
+        val showDeleteDialog: Boolean = false,
+        val groupIdToDelete: Int? = null
     ) : ViewState
 
     sealed class Event : ViewIntent {
@@ -28,7 +32,7 @@ class TeacherGroupsContract {
         data object OnRefresh : Event()
         data class OnGroupClicked(val groupId: Int) : Event()
 
-        // Диалог
+        // Диалог создания
         data object OnCreateGroupClicked : Event()
         data object OnDismissDialog : Event()
         data class OnGroupNameChanged(val name: String) : Event()
@@ -38,8 +42,9 @@ class TeacherGroupsContract {
         data class OnDisciplineSelected(val discipline: Discipline) : Event()
         data class OnDropdownExpanded(val isExpanded: Boolean) : Event()
 
-        data class OnEditGroupClicked(val group: TeacherGroupDto) : Event()
+        // --- УДАЛЕНИЕ (НОВОЕ) ---
         data class OnDeleteGroupClicked(val groupId: Int) : Event()
+        data object OnConfirmDeleteGroup : Event()
     }
 
     sealed class Effect : ViewSideEffect {
