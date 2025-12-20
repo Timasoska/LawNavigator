@@ -54,5 +54,8 @@ interface ContentRepository {
     suspend fun updateGroup(groupId: Int, name: String): Result<Unit>
     suspend fun deleteGroup(groupId: Int): Result<Unit>
     suspend fun removeStudent(groupId: Int, studentId: Int): Result<Unit>
+
+    suspend fun getGroupMembers(groupId: Int): Result<List<String>>
+
 }
 

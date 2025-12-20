@@ -4,6 +4,7 @@ package com.example.lawnavigator.presentation.profile
 import androidx.lifecycle.viewModelScope
 import com.example.lawnavigator.core.mvi.BaseViewModel
 import com.example.lawnavigator.data.local.TokenManager
+import com.example.lawnavigator.domain.repository.ContentRepository
 import com.example.lawnavigator.domain.usecase.CreateGroupUseCase
 import com.example.lawnavigator.domain.usecase.GetAnalyticsUseCase
 import com.example.lawnavigator.domain.usecase.GetTeacherGroupsUseCase
@@ -16,14 +17,15 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * ViewModel профиля. Загружает аналитику при старте.
+ * ViewModel профиля. Управляет аналитикой, вступлением в группы и просмотром участников.
  */
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val getProfileDataUseCase: GetProfileDataUseCase,
     private val logoutUseCase: LogoutUseCase,
     private val tokenManager: TokenManager,
-    private val joinGroupUseCase: JoinGroupUseCase // <--- ВНЕДРЯЕМ КОНКРЕТНЫЙ USECASE
+    private val joinGroupUseCase: JoinGroupUseCase,
+    private val contentRepository: ContentRepository // <--- ДОБАВЛЕНО: Исправляет ошибку Unresolved reference
 ) : BaseViewModel<ProfileContract.State, ProfileContract.Event, ProfileContract.Effect>() {
 
     override fun createInitialState() = ProfileContract.State()
@@ -48,32 +50,50 @@ class ProfileViewModel @Inject constructor(
             is ProfileContract.Event.OnThemeChanged -> {
                 viewModelScope.launch { tokenManager.saveTheme(event.mode) }
             }
-
             is ProfileContract.Event.OnJoinGroupClicked -> {
                 setState { copy(showJoinGroupDialog = true, inviteCodeInput = "") }
             }
             is ProfileContract.Event.OnInviteCodeChanged -> {
                 setState { copy(inviteCodeInput = event.code.uppercase()) }
             }
-            is ProfileContract.Event.OnDismissDialog -> {
-                setState { copy(showJoinGroupDialog = false) }
-            }
             is ProfileContract.Event.OnConfirmJoinGroup -> joinGroup()
+            is ProfileContract.Event.OnDismissDialog -> {
+                setState { copy(showJoinGroupDialog = false, showMembersDialog = false) }
+            }
+            // СОБЫТИЕ: Клик по группе для просмотра участников
+            is ProfileContract.Event.OnGroupClicked -> loadGroupMembers(event.groupId)
+        }
+    }
+
+    private fun loadGroupMembers(groupId: Int) {
+        setState { copy(isLoading = true) }
+        viewModelScope.launch {
+            contentRepository.getGroupMembers(groupId)
+                .onSuccess { members: List<String> -> // Явно указали тип
+                    setState {
+                        copy(
+                            isLoading = false,
+                            showMembersDialog = true,
+                            groupMembers = members
+                        )
+                    }
+                }
+                .onFailure { error ->
+                    setState { copy(isLoading = false) }
+                    setEffect { ProfileContract.Effect.ShowMessage("Ошибка: ${error.message}") }
+                }
         }
     }
 
     private fun joinGroup() {
         val code = currentState.inviteCodeInput
         if (code.isBlank()) return
-
         setState { copy(isLoading = true, showJoinGroupDialog = false) }
-
         viewModelScope.launch {
-            // ИСПОЛЬЗУЕМ НОВЫЙ USECASE
             joinGroupUseCase.joinGroup(code)
                 .onSuccess {
                     setEffect { ProfileContract.Effect.ShowMessage("Вы успешно вступили в группу!") }
-                    setState { copy(isLoading = false) }
+                    loadData() // Обновляем профиль, чтобы увидеть новую группу
                 }
                 .onFailure { error ->
                     setState { copy(isLoading = false) }

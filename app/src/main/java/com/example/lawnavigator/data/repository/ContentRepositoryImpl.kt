@@ -19,6 +19,16 @@ class ContentRepositoryImpl @Inject constructor(
     private val tokenManager: TokenManager
 ) : ContentRepository {
 
+    override suspend fun getGroupMembers(groupId: Int): Result<List<String>> {
+        return try {
+            val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))
+            val members = api.getGroupMembers("Bearer $token", groupId)
+            Result.success(members)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     override suspend fun updateGroup(groupId: Int, name: String): Result<Unit> {
         return try {
             val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))

@@ -4,6 +4,7 @@ import com.example.lawnavigator.data.local.TokenManager
 import com.example.lawnavigator.domain.model.DisciplineStat
 import com.example.lawnavigator.domain.model.Topic
 import com.example.lawnavigator.domain.model.UserAnalytics
+import com.example.lawnavigator.domain.model.UserGroup
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
@@ -11,6 +12,7 @@ import javax.inject.Inject
  * Сценарий получения всех данных для профиля.
  * Объединяет статистику и рекомендации.
  */
+
 class GetProfileDataUseCase @Inject constructor(
     private val api: ContentApi,
     private val tokenManager: TokenManager
@@ -20,7 +22,6 @@ class GetProfileDataUseCase @Inject constructor(
             val token = tokenManager.token.first() ?: throw Exception("No token")
             val auth = "Bearer $token"
 
-            // Делаем запросы к API
             val progressDto = api.getProgress(auth)
             val recsDto = api.getRecommendations(auth)
 
@@ -28,17 +29,15 @@ class GetProfileDataUseCase @Inject constructor(
                 testsPassed = progressDto.testsPassed,
                 averageScore = progressDto.averageScore,
                 trend = progressDto.trend,
-
-                history = progressDto.history, // <--- ДОБАВЬ ЭТУ СТРОКУ
-                groups = progressDto.groups,
-
+                history = progressDto.history,
+                groups = progressDto.groups.map { UserGroup(it.id, it.name) }, // Маппинг объектов
                 disciplines = progressDto.disciplines.map {
                     DisciplineStat(it.name, it.averageScore, it.trend)
                 },
                 recommendations = recsDto.map { Topic(it.id, it.name, it.disciplineId) }
             )
             Result.success(analytics)
-        } catch (e: Exception) { // <--- ВОТ ЭТОГО НЕ ХВАТАЛО
+        } catch (e: Exception) {
             Result.failure(e)
         }
     }

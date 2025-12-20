@@ -9,12 +9,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -42,67 +44,74 @@ fun TeacherGroupsScreen(
         }
     }
 
-    // --- ДИАЛОГ УДАЛЕНИЯ (НОВОЕ) ---
-    if (state.showDeleteDialog) {
+    // --- ДИАЛОГ СОЗДАНИЯ / РЕДАКТИРОВАНИЯ ---
+    if (state.showGroupDialog) {
         AlertDialog(
             onDismissRequest = { viewModel.setEvent(TeacherGroupsContract.Event.OnDismissDialog) },
-            title = { Text("Удалить группу?") },
-            text = { Text("Все данные об обучении студентов в этой группе будут отвязаны. Это действие нельзя отменить.") },
-            confirmButton = {
-                Button(
-                    onClick = { viewModel.setEvent(TeacherGroupsContract.Event.OnConfirmDeleteGroup) },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) { Text("Удалить") }
-            },
-            dismissButton = {
-                TextButton(onClick = { viewModel.setEvent(TeacherGroupsContract.Event.OnDismissDialog) }) { Text("Отмена") }
-            }
-        )
-    }
-
-    // Диалог создания
-    if (state.showCreateDialog) {
-        AlertDialog(
-            onDismissRequest = { viewModel.setEvent(TeacherGroupsContract.Event.OnDismissDialog) },
-            title = { Text("Новая группа") },
+            title = { Text(if (state.isEditing) "Редактировать название" else "Новая группа") },
             text = {
                 Column {
                     OutlinedTextField(
-                        value = state.newGroupName,
+                        value = state.groupNameInput,
                         onValueChange = { viewModel.setEvent(TeacherGroupsContract.Event.OnGroupNameChanged(it)) },
-                        label = { Text("Название группы") },
+                        label = { Text("Название") },
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    ExposedDropdownMenuBox(
-                        expanded = state.isDropdownExpanded,
-                        onExpandedChange = { viewModel.setEvent(TeacherGroupsContract.Event.OnDropdownExpanded(it)) }
-                    ) {
-                        OutlinedTextField(
-                            value = state.selectedDiscipline?.name ?: "Выберите предмет",
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text("Предмет") },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.isDropdownExpanded) },
-                            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-                            modifier = Modifier.menuAnchor().fillMaxWidth()
-                        )
-                        ExposedDropdownMenu(
+
+                    if (!state.isEditing) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        ExposedDropdownMenuBox(
                             expanded = state.isDropdownExpanded,
-                            onDismissRequest = { viewModel.setEvent(TeacherGroupsContract.Event.OnDropdownExpanded(false)) }
+                            onExpandedChange = { viewModel.setEvent(TeacherGroupsContract.Event.OnDropdownExpanded(it)) }
                         ) {
-                            state.availableDisciplines.forEach { item ->
-                                DropdownMenuItem(
-                                    text = { Text(text = item.name) },
-                                    onClick = { viewModel.setEvent(TeacherGroupsContract.Event.OnDisciplineSelected(item)) }
-                                )
+                            OutlinedTextField(
+                                value = state.selectedDiscipline?.name ?: "Выберите предмет",
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Предмет") },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.isDropdownExpanded) },
+                                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                                modifier = Modifier.menuAnchor().fillMaxWidth()
+                            )
+                            ExposedDropdownMenu(
+                                expanded = state.isDropdownExpanded,
+                                onDismissRequest = { viewModel.setEvent(TeacherGroupsContract.Event.OnDropdownExpanded(false)) }
+                            ) {
+                                state.availableDisciplines.forEach { item ->
+                                    DropdownMenuItem(
+                                        text = { Text(text = item.name) },
+                                        onClick = { viewModel.setEvent(TeacherGroupsContract.Event.OnDisciplineSelected(item)) }
+                                    )
+                                }
                             }
                         }
                     }
                 }
             },
             confirmButton = {
-                Button(onClick = { viewModel.setEvent(TeacherGroupsContract.Event.OnConfirmCreateGroup) }) { Text("Создать") }
+                Button(onClick = { viewModel.setEvent(TeacherGroupsContract.Event.OnConfirmSaveGroup) }) {
+                    Text("Сохранить")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.setEvent(TeacherGroupsContract.Event.OnDismissDialog) }) {
+                    Text("Отмена")
+                }
+            }
+        )
+    }
+
+    // --- ДИАЛОГ УДАЛЕНИЯ ---
+    if (state.showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.setEvent(TeacherGroupsContract.Event.OnDismissDialog) },
+            title = { Text("Удалить группу?") },
+            text = { Text("Это действие нельзя отменить.") },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.setEvent(TeacherGroupsContract.Event.OnConfirmDeleteGroup) },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) { Text("Удалить") }
             },
             dismissButton = {
                 TextButton(onClick = { viewModel.setEvent(TeacherGroupsContract.Event.OnDismissDialog) }) { Text("Отмена") }
@@ -123,7 +132,7 @@ fun TeacherGroupsScreen(
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { viewModel.setEvent(TeacherGroupsContract.Event.OnCreateGroupClicked) }) {
-                Icon(Icons.Default.Add, "Создать группу")
+                Icon(Icons.Default.Add, "Создать")
             }
         }
     ) { padding ->
@@ -142,47 +151,26 @@ fun TeacherGroupsScreen(
                         elevation = CardDefaults.cardElevation(2.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                                    Icon(Icons.Default.Group, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = group.name,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold
-                                    )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Group, null, tint = MaterialTheme.colorScheme.primary)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(group.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+
+                                // КНОПКА РЕДАКТИРОВАНИЯ
+                                IconButton(onClick = { viewModel.setEvent(TeacherGroupsContract.Event.OnEditGroupClicked(group)) }) {
+                                    Icon(Icons.Default.Edit, "Edit", tint = Color.Gray)
                                 }
 
-                                // КНОПКА УДАЛЕНИЯ ГРУППЫ
+                                // КНОПКА УДАЛЕНИЯ
                                 IconButton(onClick = { viewModel.setEvent(TeacherGroupsContract.Event.OnDeleteGroupClicked(group.id)) }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Delete,
-                                        contentDescription = "Удалить группу",
-                                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
-                                    )
+                                    Icon(Icons.Default.Delete, "Delete", tint = MaterialTheme.colorScheme.error)
                                 }
                             }
-
-                            Spacer(modifier = Modifier.height(8.dp))
                             Text("Предмет: ${group.disciplineName}")
                             Text("Студентов: ${group.studentCount}")
                             Spacer(modifier = Modifier.height(8.dp))
-
-                            Card(
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text(
-                                    text = "Код: ${group.inviteCode}",
-                                    modifier = Modifier.padding(8.dp).align(Alignment.CenterHorizontally),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                                )
+                            Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = MaterialTheme.shapes.small, modifier = Modifier.fillMaxWidth()) {
+                                Text("Код: ${group.inviteCode}", modifier = Modifier.padding(8.dp), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                             }
                         }
                     }

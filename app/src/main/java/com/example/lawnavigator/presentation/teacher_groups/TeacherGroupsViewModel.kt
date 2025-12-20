@@ -9,12 +9,14 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import com.example.lawnavigator.domain.usecase.GetDisciplinesUseCase // <--- Добавить
+import com.example.lawnavigator.domain.usecase.UpdateGroupUseCase
 
 @HiltViewModel
 class TeacherGroupsViewModel @Inject constructor(
     private val getTeacherGroupsUseCase: GetTeacherGroupsUseCase,
     private val createGroupUseCase: CreateGroupUseCase,
-    private val deleteGroupUseCase: DeleteGroupUseCase, // <--- Инжект
+    private val updateGroupUseCase: UpdateGroupUseCase,
+    private val deleteGroupUseCase: DeleteGroupUseCase,
     private val getDisciplinesUseCase: GetDisciplinesUseCase
 ) : BaseViewModel<TeacherGroupsContract.State, TeacherGroupsContract.Event, TeacherGroupsContract.Effect>() {
 
@@ -40,16 +42,26 @@ class TeacherGroupsViewModel @Inject constructor(
             is TeacherGroupsContract.Event.OnRefresh -> loadGroups()
             is TeacherGroupsContract.Event.OnGroupClicked -> setEffect { TeacherGroupsContract.Effect.NavigateToAnalytics(event.groupId) }
 
-            is TeacherGroupsContract.Event.OnCreateGroupClicked -> setState { copy(showCreateDialog = true, newGroupName = "") }
-            is TeacherGroupsContract.Event.OnDismissDialog -> setState { copy(showCreateDialog = false, showDeleteDialog = false, groupIdToDelete = null) }
-            is TeacherGroupsContract.Event.OnGroupNameChanged -> setState { copy(newGroupName = event.name) }
+            // Логика открытия диалогов (Исправлены имена параметров)
+            is TeacherGroupsContract.Event.OnCreateGroupClicked -> {
+                setState { copy(showGroupDialog = true, isEditing = false, groupNameInput = "", editingGroupId = null) }
+            }
+            is TeacherGroupsContract.Event.OnEditGroupClicked -> {
+                setState { copy(showGroupDialog = true, isEditing = true, groupNameInput = event.group.name, editingGroupId = event.group.id) }
+            }
+            is TeacherGroupsContract.Event.OnDismissDialog -> {
+                setState { copy(showGroupDialog = false, showDeleteDialog = false, groupNameInput = "", editingGroupId = null) }
+            }
+            is TeacherGroupsContract.Event.OnGroupNameChanged -> {
+                setState { copy(groupNameInput = event.name) }
+            }
+            is TeacherGroupsContract.Event.OnConfirmSaveGroup -> saveGroup()
 
+            // Выпадающий список
             is TeacherGroupsContract.Event.OnDropdownExpanded -> setState { copy(isDropdownExpanded = event.isExpanded) }
             is TeacherGroupsContract.Event.OnDisciplineSelected -> setState { copy(selectedDiscipline = event.discipline, isDropdownExpanded = false) }
 
-            is TeacherGroupsContract.Event.OnConfirmCreateGroup -> createGroup()
-
-            // --- ОБРАБОТКА УДАЛЕНИЯ ---
+            // Удаление
             is TeacherGroupsContract.Event.OnDeleteGroupClicked -> {
                 setState { copy(showDeleteDialog = true, groupIdToDelete = event.groupId) }
             }
@@ -57,38 +69,51 @@ class TeacherGroupsViewModel @Inject constructor(
         }
     }
 
-    private fun createGroup() {
-        val name = currentState.newGroupName
-        val discipline = currentState.selectedDiscipline
-        if (name.isBlank() || discipline == null) return
+    private fun saveGroup() {
+        val name = currentState.groupNameInput
+        val disciplineId = currentState.selectedDiscipline?.id
 
-        setState { copy(isLoading = true, showCreateDialog = false) }
+        if (name.isBlank()) return
+
+        setState { copy(isLoading = true, showGroupDialog = false) }
+
         viewModelScope.launch {
-            createGroupUseCase.createGroup(name, discipline.id)
-                .onSuccess { code ->
-                    setEffect { TeacherGroupsContract.Effect.ShowMessage("Группа создана! Код: $code") }
-                    loadGroups()
-                }
-                .onFailure {
+            val result = if (currentState.isEditing) {
+                // Редактирование существующей
+                updateGroupUseCase(currentState.editingGroupId!!, name)
+            } else {
+                // Создание новой (disciplineId обязателен)
+                if (disciplineId == null) {
                     setState { copy(isLoading = false) }
-                    setEffect { TeacherGroupsContract.Effect.ShowMessage("Ошибка: ${it.message}") }
+                    return@launch
                 }
+                createGroupUseCase.createGroup(name, disciplineId).map { Unit }
+            }
+
+            result.onSuccess {
+                val msg = if (currentState.isEditing) "Название группы обновлено" else "Группа успешно создана"
+                setEffect { TeacherGroupsContract.Effect.ShowMessage(msg) }
+                loadGroups()
+            }.onFailure {
+                setState { copy(isLoading = false) }
+                setEffect { TeacherGroupsContract.Effect.ShowMessage("Ошибка: ${it.message}") }
+            }
         }
     }
 
     private fun deleteGroup() {
-        val groupId = currentState.groupIdToDelete ?: return
+        val id = currentState.groupIdToDelete ?: return
         setState { copy(isLoading = true, showDeleteDialog = false) }
 
         viewModelScope.launch {
-            deleteGroupUseCase(groupId)
+            deleteGroupUseCase(id)
                 .onSuccess {
-                    setEffect { TeacherGroupsContract.Effect.ShowMessage("Группа успешно удалена") }
+                    setEffect { TeacherGroupsContract.Effect.ShowMessage("Группа удалена") }
                     loadGroups()
                 }
-                .onFailure { error ->
+                .onFailure {
                     setState { copy(isLoading = false) }
-                    setEffect { TeacherGroupsContract.Effect.ShowMessage("Ошибка при удалении: ${error.localizedMessage}") }
+                    setEffect { TeacherGroupsContract.Effect.ShowMessage("Не удалось удалить группу") }
                 }
         }
     }
@@ -97,8 +122,12 @@ class TeacherGroupsViewModel @Inject constructor(
         setState { copy(isLoading = true, error = null) }
         viewModelScope.launch {
             getTeacherGroupsUseCase.getTeacherGroups()
-                .onSuccess { groups -> setState { copy(isLoading = false, groups = groups) } }
-                .onFailure { setState { copy(isLoading = false, error = it.message) } }
+                .onSuccess { groups ->
+                    setState { copy(isLoading = false, groups = groups) }
+                }
+                .onFailure {
+                    setState { copy(isLoading = false, error = it.message) }
+                }
         }
     }
 }

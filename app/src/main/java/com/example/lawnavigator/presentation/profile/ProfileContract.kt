@@ -15,9 +15,12 @@ class ProfileContract {
         val error: String? = null,
         val themeMode: ThemeMode = ThemeMode.SYSTEM,
 
-        // --- НОВЫЕ ПОЛЯ ---
         val showJoinGroupDialog: Boolean = false,
-        val inviteCodeInput: String = ""
+        val inviteCodeInput: String = "",
+
+        // --- НОВЫЕ ПОЛЯ ДЛЯ СПИСКА УЧАСТНИКОВ ---
+        val showMembersDialog: Boolean = false,
+        val groupMembers: List<String> = emptyList()
     ) : ViewState
 
     sealed class Event : ViewIntent {
@@ -27,19 +30,19 @@ class ProfileContract {
         data object OnBackClicked : Event()
         data class OnThemeChanged(val mode: ThemeMode) : Event()
 
-        // --- НОВЫЕ СОБЫТИЯ ---
-        data object OnJoinGroupClicked : Event() // Открыть диалог
-        data class OnInviteCodeChanged(val code: String) : Event() // Ввод текста
-        data object OnConfirmJoinGroup : Event() // Нажать "Вступить"
-        data object OnDismissDialog : Event() // Закрыть
+        data object OnJoinGroupClicked : Event()
+        data class OnInviteCodeChanged(val code: String) : Event()
+        data object OnConfirmJoinGroup : Event()
+        data object OnDismissDialog : Event()
+
+        // Клик по группе (нужен ID, поэтому изменим DTO/Domain позже, пока используем заглушку ID)
+        data class OnGroupClicked(val groupId: Int) : Event()
     }
 
     sealed class Effect : ViewSideEffect {
         data object NavigateToLogin : Effect()
         data object NavigateBack : Effect()
         data class NavigateToTopic(val topicId: Int) : Effect()
-
-        // --- НОВЫЙ ЭФФЕКТ ---
         data class ShowMessage(val msg: String) : Effect()
     }
 }

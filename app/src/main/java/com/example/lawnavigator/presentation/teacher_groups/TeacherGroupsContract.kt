@@ -13,16 +13,18 @@ class TeacherGroupsContract {
         val isLoading: Boolean = false,
         val error: String? = null,
 
-        // --- ДЛЯ ДИАЛОГА СОЗДАНИЯ ---
-        val showCreateDialog: Boolean = false,
-        val newGroupName: String = "",
+        // Универсальные поля для диалога (Создание и Редактирование)
+        val showGroupDialog: Boolean = false,
+        val isEditing: Boolean = false,
+        val editingGroupId: Int? = null,
+        val groupNameInput: String = "",
 
-        // Выбор дисциплины
+        // Поля выбора дисциплины
         val availableDisciplines: List<Discipline> = emptyList(),
         val selectedDiscipline: Discipline? = null,
         val isDropdownExpanded: Boolean = false,
 
-        // --- ДЛЯ ДИАЛОГА УДАЛЕНИЯ (НОВОЕ) ---
+        // Поля удаления
         val showDeleteDialog: Boolean = false,
         val groupIdToDelete: Int? = null
     ) : ViewState
@@ -32,17 +34,18 @@ class TeacherGroupsContract {
         data object OnRefresh : Event()
         data class OnGroupClicked(val groupId: Int) : Event()
 
-        // Диалог создания
+        // События диалога
         data object OnCreateGroupClicked : Event()
+        data class OnEditGroupClicked(val group: TeacherGroupDto) : Event()
         data object OnDismissDialog : Event()
         data class OnGroupNameChanged(val name: String) : Event()
-        data object OnConfirmCreateGroup : Event()
+        data object OnConfirmSaveGroup : Event() // Универсальное событие сохранения
 
         // Выпадающий список
         data class OnDisciplineSelected(val discipline: Discipline) : Event()
         data class OnDropdownExpanded(val isExpanded: Boolean) : Event()
 
-        // --- УДАЛЕНИЕ (НОВОЕ) ---
+        // Удаление
         data class OnDeleteGroupClicked(val groupId: Int) : Event()
         data object OnConfirmDeleteGroup : Event()
     }

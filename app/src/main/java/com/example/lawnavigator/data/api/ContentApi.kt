@@ -35,6 +35,13 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ContentApi {
+
+    @GET("api/groups/{id}/members")
+    suspend fun getGroupMembers(
+        @Header("Authorization") token: String,
+        @Path("id") groupId: Int
+    ): List<String>
+
     @Multipart
     @POST("api/admin/lectures/{id}/files")
     suspend fun attachFile(
