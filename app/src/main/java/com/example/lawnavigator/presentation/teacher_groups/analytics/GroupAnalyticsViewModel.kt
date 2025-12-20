@@ -12,7 +12,7 @@ import javax.inject.Inject
 @HiltViewModel
 class GroupAnalyticsViewModel @Inject constructor(
     private val getAnalyticsUseCase: GetAnalyticsUseCase,
-    private val removeStudentUseCase: RemoveStudentUseCase, // <--- Внедряем UseCase
+    private val removeStudentUseCase: RemoveStudentUseCase,
     savedStateHandle: SavedStateHandle
 ) : BaseViewModel<GroupAnalyticsContract.State, GroupAnalyticsContract.Event, GroupAnalyticsContract.Effect>() {
 
@@ -28,7 +28,14 @@ class GroupAnalyticsViewModel @Inject constructor(
         when (event) {
             is GroupAnalyticsContract.Event.OnBackClicked -> setEffect { GroupAnalyticsContract.Effect.NavigateBack }
             is GroupAnalyticsContract.Event.OnRefresh -> loadData()
-            is GroupAnalyticsContract.Event.OnRemoveStudentClicked -> removeStudent(event.studentId) // <--- Обрабатываем нажатие
+            is GroupAnalyticsContract.Event.OnRemoveStudentClicked -> removeStudent(event.studentId)
+
+            // ОБРАБОТКА КЛИКА ПО СТУДЕНТУ
+            is GroupAnalyticsContract.Event.OnStudentClicked -> {
+                setEffect {
+                    GroupAnalyticsContract.Effect.NavigateToStudentReport(groupId, event.studentId)
+                }
+            }
         }
     }
 
@@ -46,15 +53,12 @@ class GroupAnalyticsViewModel @Inject constructor(
     }
 
     private fun removeStudent(studentId: Int) {
-        // Логируем для отладки
-        android.util.Log.d("AnalyticsVM", "Removing student $studentId from group $groupId")
-
         setState { copy(isLoading = true) }
         viewModelScope.launch {
             removeStudentUseCase(groupId, studentId)
                 .onSuccess {
-                    setEffect { GroupAnalyticsContract.Effect.ShowMessage("Студент исключен из группы") }
-                    loadData() // Перезагружаем список, чтобы студент исчез из UI
+                    setEffect { GroupAnalyticsContract.Effect.ShowMessage("Студент исключен") }
+                    loadData()
                 }
                 .onFailure { error ->
                     setState { copy(isLoading = false) }

@@ -8,6 +8,7 @@ import com.example.lawnavigator.domain.model.Discipline
 import com.example.lawnavigator.domain.model.LeaderboardUser
 import com.example.lawnavigator.domain.model.Lecture
 import com.example.lawnavigator.domain.model.LectureProgress
+import com.example.lawnavigator.domain.model.StudentDetailedReport
 import com.example.lawnavigator.domain.model.TestContent
 import com.example.lawnavigator.domain.model.TestDraft
 import com.example.lawnavigator.domain.model.TestResult
@@ -59,6 +60,7 @@ interface ContentRepository {
     suspend fun getGroupMembers(groupId: Int): Result<List<String>>
 
     suspend fun getDisciplineDetails(disciplineId: Int): Result<List<TopicStat>>
+    suspend fun getStudentReport(groupId: Int, studentId: Int): Result<StudentDetailedReport>
 
 }
 

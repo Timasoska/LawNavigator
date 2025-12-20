@@ -49,3 +49,4 @@ data class StudentDetailedReportDto(
     val topics: List<TopicStatDto>,
     val attemptHistory: List<Int>
 )
+

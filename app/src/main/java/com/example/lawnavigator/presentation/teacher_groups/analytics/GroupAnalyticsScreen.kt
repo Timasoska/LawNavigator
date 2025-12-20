@@ -2,6 +2,7 @@ package com.example.lawnavigator.presentation.teacher_groups.analytics
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -30,17 +31,21 @@ import kotlinx.coroutines.flow.collectLatest
 @Composable
 fun GroupAnalyticsScreen(
     viewModel: GroupAnalyticsViewModel = hiltViewModel(),
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    // ДОБАВЛЯЕМ ПАРАМЕТР НАВИГАЦИИ
+    onNavigateToStudentReport: (Int, Int) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
-    val context = LocalContext.current // <--- Контекст для Toast
+    val context = LocalContext.current
 
     LaunchedEffect(true) {
         viewModel.effect.collectLatest { effect ->
             when (effect) {
                 is GroupAnalyticsContract.Effect.NavigateBack -> onNavigateBack()
-                is GroupAnalyticsContract.Effect.ShowMessage -> { // <--- Обработка сообщения
-                    Toast.makeText(context, effect.msg, Toast.LENGTH_SHORT).show()
+                is GroupAnalyticsContract.Effect.ShowMessage -> Toast.makeText(context, effect.msg, Toast.LENGTH_SHORT).show()
+                // ОБРАБОТКА ЭФФЕКТА ПЕРЕХОДА
+                is GroupAnalyticsContract.Effect.NavigateToStudentReport -> {
+                    onNavigateToStudentReport(effect.groupId, effect.studentId)
                 }
             }
         }
@@ -52,7 +57,7 @@ fun GroupAnalyticsScreen(
                 title = { Text("Аналитика группы") },
                 navigationIcon = {
                     IconButton(onClick = { viewModel.setEvent(GroupAnalyticsContract.Event.OnBackClicked) }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Назад")
                     }
                 }
             )
@@ -72,18 +77,14 @@ fun GroupAnalyticsScreen(
                 items(state.students) { student ->
                     StudentCard(
                         student = student,
+                        // ВЫЗЫВАЕМ СОБЫТИЕ ПРИ КЛИКЕ НА КАРТОЧКУ
+                        onCardClick = {
+                            viewModel.setEvent(GroupAnalyticsContract.Event.OnStudentClicked(student.studentId))
+                        },
                         onRemoveClick = {
                             viewModel.setEvent(GroupAnalyticsContract.Event.OnRemoveStudentClicked(student.studentId))
                         }
                     )
-                }
-
-                if (state.students.isEmpty() && !state.isLoading) {
-                    item {
-                        Box(modifier = Modifier.fillMaxWidth().padding(top = 32.dp), contentAlignment = Alignment.Center) {
-                            Text("В группе пока нет студентов", color = Color.Gray)
-                        }
-                    }
                 }
             }
         }
@@ -93,45 +94,33 @@ fun GroupAnalyticsScreen(
 @Composable
 fun StudentCard(
     student: StudentRiskDto,
+    onCardClick: () -> Unit, // <--- ДОБАВЛЕН ПАРАМЕТР
     onRemoveClick: () -> Unit
 ) {
     val riskColor = when (student.riskLevel) {
-        "RED" -> Color(0xFFE53935)   // Красный
-        "YELLOW" -> Color(0xFFFFB300) // Желтый
-        else -> Color(0xFF43A047)     // Зеленый
+        "RED" -> Color(0xFFE53935)
+        "YELLOW" -> Color(0xFFFFB300)
+        else -> Color(0xFF43A047)
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .clickable { onCardClick() }, // <--- ТЕПЕРЬ ОШИБКИ НЕТ
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(16.dp)
-                    .background(riskColor, CircleShape)
-            )
-
+            Box(modifier = Modifier.size(16.dp).background(riskColor, CircleShape))
             Spacer(modifier = Modifier.width(16.dp))
-
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = student.email, fontWeight = FontWeight.Bold)
-                Text(
-                    text = "Ср. балл: ${String.format("%.1f", student.averageScore)}",
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                Text(text = "Ср. балл: ${String.format("%.1f", student.averageScore)}")
             }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
             MiniTrendIndicator(trend = student.trend)
-
-            Spacer(modifier = Modifier.width(8.dp))
-
             IconButton(onClick = onRemoveClick) {
                 Icon(Icons.Default.Close, contentDescription = "Исключить", tint = Color.Gray)
             }

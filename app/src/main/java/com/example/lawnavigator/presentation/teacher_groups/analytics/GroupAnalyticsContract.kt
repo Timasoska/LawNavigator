@@ -16,10 +16,12 @@ class GroupAnalyticsContract {
         data object OnBackClicked : Event()
         data object OnRefresh : Event()
         data class OnRemoveStudentClicked(val studentId: Int) : Event()
+        data class OnStudentClicked(val studentId: Int) : Event()
     }
 
     sealed class Effect : ViewSideEffect {
         data object NavigateBack : Effect()
-        data class ShowMessage(val msg: String) : Effect() // <--- Добавили для уведомлений
+        data class ShowMessage(val msg: String) : Effect()
+        data class NavigateToStudentReport(val groupId: Int, val studentId: Int) : Effect()
     }
 }

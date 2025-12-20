@@ -29,3 +29,11 @@ data class TopicStat(
     val attemptsCount: Int,
     val lastScore: Int?
 )
+
+data class StudentDetailedReport(
+    val email: String,
+    val averageScore: Double,
+    val trend: Double,
+    val topicStats: List<TopicStat>,
+    val history: List<Int>
+)

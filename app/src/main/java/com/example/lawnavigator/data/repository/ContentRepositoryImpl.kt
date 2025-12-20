@@ -481,4 +481,23 @@ class ContentRepositoryImpl @Inject constructor(
             Result.success(Unit)
         } catch (e: Exception) { Result.failure(e) }
     }
+
+    override suspend fun getStudentReport(groupId: Int, studentId: Int): Result<StudentDetailedReport> = try {
+        val token = tokenManager.token.first() ?: throw Exception("No token")
+        val dto = api.getStudentReport("Bearer $token", groupId, studentId)
+
+        Result.success(
+            StudentDetailedReport(
+                email = dto.email,
+                averageScore = dto.overallAverage,
+                trend = dto.overallTrend,
+                history = dto.attemptHistory,
+                topicStats = dto.topics.map {
+                    TopicStat(it.topicId, it.topicName, it.averageScore, it.attemptsCount, it.lastScore)
+                }
+            )
+        )
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
 }

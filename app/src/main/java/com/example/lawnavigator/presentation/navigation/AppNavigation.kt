@@ -15,6 +15,7 @@ import com.example.lawnavigator.presentation.home.HomeScreen
 import com.example.lawnavigator.presentation.lecture.LectureScreen
 import com.example.lawnavigator.presentation.login.LoginScreen
 import com.example.lawnavigator.presentation.profile.ProfileScreen
+import com.example.lawnavigator.presentation.teacher_groups.report.StudentReportScreen
 import com.example.lawnavigator.presentation.topics.TopicsScreen
 
 @Composable
@@ -259,7 +260,11 @@ fun AppNavigation(
             arguments = listOf(navArgument("groupId") { type = NavType.IntType })
         ) {
             com.example.lawnavigator.presentation.teacher_groups.analytics.GroupAnalyticsScreen(
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                // РЕАЛИЗАЦИЯ ПЕРЕХОДА К ОТЧЕТУ
+                onNavigateToStudentReport = { groupId, studentId ->
+                    navController.navigate(Screen.StudentReport.createRoute(groupId, studentId))
+                }
             )
         }
 
@@ -283,6 +288,16 @@ fun AppNavigation(
             com.example.lawnavigator.presentation.profile.details.DisciplineDetailsScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
+        }
+
+        composable(
+            route = Screen.StudentReport.route,
+            arguments = listOf(
+                navArgument("groupId") { type = NavType.IntType },
+                navArgument("studentId") { type = NavType.IntType }
+            )
+        ) {
+            StudentReportScreen(onNavigateBack = { navController.popBackStack() })
         }
 
     }
