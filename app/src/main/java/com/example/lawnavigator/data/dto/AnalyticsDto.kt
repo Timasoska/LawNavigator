@@ -27,3 +27,25 @@ data class DisciplineStatDto(
     val averageScore: Double,
     val trend: Double
 )
+
+@Serializable
+data class TopicStatDto(
+    val topicId: Int,
+    val topicName: String,
+    val averageScore: Double,
+    val attemptsCount: Int,
+    val lastScore: Int?
+)
+
+/**
+ * Полный детальный отчет по студенту для преподавателя.
+ * Позволяет визуализировать историю успеваемости и дефициты знаний по темам.
+ */
+@Serializable
+data class StudentDetailedReportDto(
+    val email: String,
+    val overallAverage: Double,
+    val overallTrend: Double,
+    val topics: List<TopicStatDto>,
+    val attemptHistory: List<Int>
+)

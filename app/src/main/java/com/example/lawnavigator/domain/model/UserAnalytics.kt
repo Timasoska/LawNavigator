@@ -12,11 +12,20 @@ data class UserAnalytics(
     val history: List<Int>,
     val recommendations: List<Topic>,
     val disciplines: List<DisciplineStat> = emptyList(),
-    val groups: List<UserGroup> // Изменили тип
+    val groups: List<UserGroup>
 )
 
 data class DisciplineStat(
+    val id: Int, // Обязательно Int для навигации
     val name: String,
     val score: Double,
     val trend: Double
+)
+
+data class TopicStat(
+    val topicId: Int,
+    val name: String,
+    val averageScore: Double,
+    val attemptsCount: Int,
+    val lastScore: Int?
 )

@@ -115,21 +115,12 @@ fun AppNavigation(
         // --- 5. ПРОФИЛЬ ---
         composable(Screen.Profile.route) {
             ProfileScreen(
-                onNavigateBack = {
-                    navController.popBackStack()
-                },
-                onNavigateToLogin = {
-                    navController.navigate(Screen.Login.route) {
-                        popUpTo(0) { inclusive = true }
-                    }
-                },
-                // 4. РЕАЛИЗУЕМ ПЕРЕХОД ПО РЕКОМЕНДАЦИИ
-                onNavigateToTopic = { topicId ->
-                    // Здесь мы используем topicId.
-                    // Если у темы одна лекция, можно переходить сразу на Screen.Lecture.
-                    // Если много - лучше на Screen.Topics или сделать Screen.LecturesList.
-                    // Для простоты пока переходим на лекцию (предполагаем 1 к 1 или заглушку)
-                    navController.navigate(Screen.Lecture.createRoute(topicId))
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToLogin = { navController.navigate(Screen.Login.route) { popUpTo(0) { inclusive = true } } },
+                onNavigateToTopic = { topicId -> navController.navigate(Screen.LecturesList.createRoute(topicId)) },
+                // --- ПЕРЕДАЕМ НОВЫЙ КОЛБЭК ---
+                onNavigateToDisciplineDetails = { id, name ->
+                    navController.navigate(Screen.DisciplineDetails.createRoute(id, name))
                 }
             )
         }
@@ -279,6 +270,18 @@ fun AppNavigation(
                 onNavigateToAnalytics = { groupId ->
                     navController.navigate(Screen.GroupAnalytics.createRoute(groupId))
                 }
+            )
+        }
+
+        composable(
+            route = Screen.DisciplineDetails.route,
+            arguments = listOf(
+                navArgument("disciplineId") { type = NavType.IntType },
+                navArgument("disciplineName") { type = NavType.StringType }
+            )
+        ) {
+            com.example.lawnavigator.presentation.profile.details.DisciplineDetailsScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 

@@ -19,6 +19,15 @@ class ContentRepositoryImpl @Inject constructor(
     private val tokenManager: TokenManager
 ) : ContentRepository {
 
+    override suspend fun getDisciplineDetails(disciplineId: Int): Result<List<TopicStat>> = try {
+        val token = tokenManager.token.first() ?: throw Exception("No token")
+        val dtos = api.getDisciplineDetails("Bearer $token", disciplineId)
+        println("📊 [ANALYTICS] Received ${dtos.size} topic stats for discipline $disciplineId")
+        Result.success(dtos.map { TopicStat(it.topicId, it.topicName, it.averageScore, it.attemptsCount, it.lastScore) })
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
     override suspend fun getGroupMembers(groupId: Int): Result<List<String>> {
         return try {
             val token = tokenManager.token.first() ?: return Result.failure(Exception("No token"))

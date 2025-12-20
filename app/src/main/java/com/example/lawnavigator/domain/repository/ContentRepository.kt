@@ -12,6 +12,7 @@ import com.example.lawnavigator.domain.model.TestContent
 import com.example.lawnavigator.domain.model.TestDraft
 import com.example.lawnavigator.domain.model.TestResult
 import com.example.lawnavigator.domain.model.Topic
+import com.example.lawnavigator.domain.model.TopicStat
 
 interface ContentRepository {
     suspend fun getDisciplines(): Result<List<Discipline>>
@@ -56,6 +57,8 @@ interface ContentRepository {
     suspend fun removeStudent(groupId: Int, studentId: Int): Result<Unit>
 
     suspend fun getGroupMembers(groupId: Int): Result<List<String>>
+
+    suspend fun getDisciplineDetails(disciplineId: Int): Result<List<TopicStat>>
 
 }
 

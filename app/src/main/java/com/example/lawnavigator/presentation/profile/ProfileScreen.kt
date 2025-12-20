@@ -37,7 +37,8 @@ fun ProfileScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
     onNavigateToLogin: () -> Unit,
     onNavigateBack: () -> Unit,
-    onNavigateToTopic: (Int) -> Unit
+    onNavigateToTopic: (Int) -> Unit,
+    onNavigateToDisciplineDetails: (Int, String) -> Unit // <--- ДОБАВЬ ЭТО
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
@@ -236,12 +237,30 @@ fun ProfileScreen(
 
                 val disciplines = state.analytics?.disciplines ?: emptyList()
                 items(disciplines) { disc ->
-                    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                            // ТЕПЕРЬ ВСЁ РАБОТАЕТ КОРРЕКТНО
+                            .clickable { onNavigateToDisciplineDetails(disc.id, disc.name) },
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        elevation = CardDefaults.cardElevation(1.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(disc.name, fontWeight = FontWeight.Bold)
-                                LinearProgressIndicator(progress = { (disc.score / 100).toFloat() }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp))
+                                Text(text = disc.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                LinearProgressIndicator(
+                                    progress = { (disc.score / 100).toFloat() },
+                                    modifier = Modifier.fillMaxWidth().height(8.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(4.dp)),
+                                    color = if (disc.score >= 60) Color(0xFF4CAF50) else Color(0xFFFFC107),
+                                    trackColor = MaterialTheme.colorScheme.surfaceVariant
+                                )
                             }
+                            Spacer(modifier = Modifier.width(16.dp))
                             MiniTrendIndicator(trend = disc.trend)
                         }
                     }

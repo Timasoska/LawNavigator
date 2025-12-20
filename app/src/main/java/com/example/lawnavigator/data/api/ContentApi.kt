@@ -11,12 +11,14 @@ import com.example.lawnavigator.data.dto.LectureProgressDto
 import com.example.lawnavigator.data.dto.ProgressDto
 import com.example.lawnavigator.data.dto.SaveTestRequestDto
 import com.example.lawnavigator.data.dto.SaveTopicRequestDto
+import com.example.lawnavigator.data.dto.StudentDetailedReportDto
 import com.example.lawnavigator.data.dto.StudentRiskDto
 import com.example.lawnavigator.data.dto.SubmitAnswerRequest
 import com.example.lawnavigator.data.dto.TeacherGroupDto
 import com.example.lawnavigator.data.dto.TestDto
 import com.example.lawnavigator.data.dto.TestResultDto
 import com.example.lawnavigator.data.dto.TopicDto
+import com.example.lawnavigator.data.dto.TopicStatDto
 import com.example.lawnavigator.data.dto.UpdateGroupRequestDto
 import com.example.lawnavigator.data.dto.UpdateLectureRequestDto
 import com.example.lawnavigator.data.dto.UpdateProgressRequest
@@ -35,6 +37,20 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ContentApi {
+
+    @GET("api/groups/{groupId}/student/{studentId}/report")
+    suspend fun getStudentReport(
+        @Header("Authorization") token: String,
+        @Path("groupId") groupId: Int,
+        @Path("studentId") studentId: Int
+    ): StudentDetailedReportDto // Нужно создать эту DTO для учителя
+
+    // --- ГЛУБОКАЯ АНАЛИТИКА ---
+    @GET("api/analytics/discipline/{id}/details")
+    suspend fun getDisciplineDetails(
+        @Header("Authorization") token: String,
+        @Path("id") disciplineId: Int
+    ): List<TopicStatDto>
 
     @GET("api/groups/{id}/members")
     suspend fun getGroupMembers(
