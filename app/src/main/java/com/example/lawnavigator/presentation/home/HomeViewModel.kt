@@ -3,6 +3,7 @@ package com.example.lawnavigator.presentation.home
 import androidx.lifecycle.viewModelScope
 import com.example.lawnavigator.core.mvi.BaseViewModel
 import com.example.lawnavigator.domain.usecase.GetDisciplinesUseCase
+import com.example.lawnavigator.domain.usecase.GetEngagementStatusUseCase // <--- Импорт
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -12,14 +13,15 @@ import kotlinx.coroutines.flow.first
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val getDisciplinesUseCase: GetDisciplinesUseCase,
-    private val tokenManager: TokenManager // <--- ИНЖЕКТ
+    private val getEngagementStatusUseCase: GetEngagementStatusUseCase,
+    private val tokenManager: TokenManager
 ) : BaseViewModel<HomeContract.State, HomeContract.Event, HomeContract.Effect>() {
 
     override fun createInitialState() = HomeContract.State()
 
     init {
-        checkRole() // <--- Проверка
-        loadDisciplines()
+        checkRole()
+        loadData()
     }
 
     private fun checkRole() {
@@ -31,30 +33,41 @@ class HomeViewModel @Inject constructor(
 
     override fun handleEvent(event: HomeContract.Event) {
         when (event) {
-            is HomeContract.Event.OnRetryClicked -> loadDisciplines()
+            // И Refresh, и Retry вызывают загрузку данных
+            is HomeContract.Event.OnRetryClicked -> loadData()
+            is HomeContract.Event.OnRefresh -> loadData() // <--- ОБРАБОТКА
+
             is HomeContract.Event.OnDisciplineClicked -> {
                 setEffect { HomeContract.Effect.NavigateToTopics(event.disciplineId) }
             }
-            // Обработка клика
             is HomeContract.Event.OnTeacherGroupsClicked -> {
                 setEffect { HomeContract.Effect.NavigateToTeacherGroups }
             }
         }
     }
 
-    private fun loadDisciplines() {
+    private fun loadData() {
+        // isLoading = true запускает спиннер в UI
         setState { copy(isLoading = true, error = null) }
-        viewModelScope.launch {
-            val result = getDisciplinesUseCase()
 
-            result.fold(
-                onSuccess = { list ->
-                    setState { copy(isLoading = false, disciplines = list) }
-                },
-                onFailure = { error ->
-                    setState { copy(isLoading = false, error = error.message ?: "Ошибка загрузки") }
+        viewModelScope.launch {
+            // 1. Грузим список предметов
+            getDisciplinesUseCase()
+                .onSuccess { list ->
+                    setState { copy(disciplines = list) }
                 }
-            )
+                .onFailure { error ->
+                    setState { copy(error = error.message ?: "Ошибка загрузки") }
+                }
+
+            // 2. Грузим XP и Стрики (параллельно обновляем стейт)
+            getEngagementStatusUseCase()
+                .onSuccess { status ->
+                    setState { copy(engagementStatus = status) }
+                }
+
+            // Выключаем спиннер
+            setState { copy(isLoading = false) }
         }
     }
 }

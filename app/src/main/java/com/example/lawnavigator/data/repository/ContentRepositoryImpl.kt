@@ -524,4 +524,20 @@ class ContentRepositoryImpl @Inject constructor(
     } catch (e: Exception) {
         Result.failure(e)
     }
+
+    override suspend fun getEngagementStatus(): Result<EngagementStatus> = try {
+        val token = tokenManager.token.first() ?: throw Exception("No token")
+        val dto = api.getEngagementStatus("Bearer $token")
+        Result.success(EngagementStatus(dto.streak, dto.todayXp, dto.dailyGoalXp, dto.totalXp, dto.isDailyGoalReached))
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    override suspend fun addXp(amount: Int, source: String): Result<Unit> = try {
+        val token = tokenManager.token.first() ?: throw Exception("No token")
+        api.addXp("Bearer $token", AddXpRequestDto(amount, source))
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
 }

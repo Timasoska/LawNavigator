@@ -1,8 +1,10 @@
 package com.example.lawnavigator.data.api
 
+import com.example.lawnavigator.data.dto.AddXpRequestDto
 import com.example.lawnavigator.data.dto.AdminTestResponseDto
 import com.example.lawnavigator.data.dto.CreateGroupRequestDto
 import com.example.lawnavigator.data.dto.DisciplineDto
+import com.example.lawnavigator.data.dto.EngagementStatusDto
 import com.example.lawnavigator.data.dto.FlashcardDto
 import com.example.lawnavigator.data.dto.InviteCodeResponse
 import com.example.lawnavigator.data.dto.JoinGroupRequestDto
@@ -39,6 +41,12 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ContentApi {
+    // --- GAMIFICATION ---
+    @GET("api/engagement")
+    suspend fun getEngagementStatus(@Header("Authorization") token: String): EngagementStatusDto
+
+    @POST("api/engagement/xp")
+    suspend fun addXp(@Header("Authorization") token: String, @Body request: AddXpRequestDto)
 
     // --- FLASHCARDS ---
     @GET("api/flashcards/due")

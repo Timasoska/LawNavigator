@@ -3,6 +3,7 @@ package com.example.lawnavigator.presentation.test
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.example.lawnavigator.core.mvi.BaseViewModel
+import com.example.lawnavigator.domain.usecase.AddXpUseCase
 import com.example.lawnavigator.domain.usecase.SubmitTestUseCase
 import com.example.lawnavigator.domain.usecase.TestUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,6 +19,7 @@ class TestViewModel @Inject constructor(
     private val testUseCase: TestUseCase,
     private val submitTestUseCase: SubmitTestUseCase,
     private val getTestByLectureUseCase: com.example.lawnavigator.domain.usecase.GetTestByLectureUseCase,
+    private val addXpUseCase: AddXpUseCase, // <--- ИНЖЕКТ
     savedStateHandle: SavedStateHandle
 ) : BaseViewModel<TestContract.State, TestContract.Event, TestContract.Effect>() {
 
@@ -146,14 +148,23 @@ class TestViewModel @Inject constructor(
         val testId = currentState.test?.id ?: return
         setState { copy(isLoading = true) }
 
-        // ЛОГ: Начало отправки
-        android.util.Log.d("TestVM", "Submitting test ID: $testId with answers: ${currentState.selectedAnswers}")
+        android.util.Log.d("TestVM", "Submitting test ID: $testId")
 
         viewModelScope.launch {
-            // UserId берется из токена на сервере, здесь передаем заглушку 0
+            // Отправляем ответы (заглушка userId = 0, сервер берет из токена)
             submitTestUseCase(0, testId, currentState.selectedAnswers)
                 .onSuccess { result ->
-                    android.util.Log.d("TestVM", "Submit success! Score: ${result.score}")
+
+                    // --- НАЧИСЛЕНИЕ ОПЫТА ---
+                    // Если оценка > 0, начисляем XP
+                    if (result.score > 0) {
+                        launch {
+                            // Начисляем столько XP, сколько баллов получил (макс 100)
+                            addXpUseCase(result.score, "test_passed")
+                        }
+                    }
+                    // ------------------------
+
                     setState {
                         copy(
                             isLoading = false,
@@ -165,11 +176,7 @@ class TestViewModel @Inject constructor(
                     }
                 }
                 .onFailure { error ->
-                    // ЛОГ: Ошибка
-                    android.util.Log.e("TestVM", "Submit FAILED: ${error.message}", error)
-
                     setState { copy(isLoading = false) }
-                    // Теперь ShowMessage существует и ошибки не будет
                     setEffect { TestContract.Effect.ShowMessage("Ошибка отправки: ${error.message}") }
                 }
         }

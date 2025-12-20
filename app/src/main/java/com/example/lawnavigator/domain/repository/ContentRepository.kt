@@ -5,6 +5,7 @@ import com.example.lawnavigator.data.dto.SubmitAnswerRequest
 import com.example.lawnavigator.data.dto.TeacherGroupDto
 import com.example.lawnavigator.data.dto.TestResultDto
 import com.example.lawnavigator.domain.model.Discipline
+import com.example.lawnavigator.domain.model.EngagementStatus
 import com.example.lawnavigator.domain.model.Flashcard
 import com.example.lawnavigator.domain.model.LeaderboardUser
 import com.example.lawnavigator.domain.model.Lecture
@@ -65,5 +66,7 @@ interface ContentRepository {
     suspend fun getDueFlashcards(): Result<List<Flashcard>>
     suspend fun reviewFlashcard(questionId: Int, quality: Int): Result<Unit>
 
+    suspend fun getEngagementStatus(): Result<EngagementStatus>
+    suspend fun addXp(amount: Int, source: String): Result<Unit>
 }
 

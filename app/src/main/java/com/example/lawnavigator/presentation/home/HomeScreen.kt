@@ -5,12 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -21,32 +16,32 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.lawnavigator.presentation.components.CommonPullToRefreshBox // <--- ВЕРНУЛИ ИМПОРТ
+import com.example.lawnavigator.presentation.components.DailyGoalCard
 import com.example.lawnavigator.presentation.components.EmptyScreen
 import com.example.lawnavigator.presentation.components.ErrorScreen
 import com.example.lawnavigator.presentation.components.LoadingScreen
+import com.example.lawnavigator.presentation.components.StreakBadge
 import kotlinx.coroutines.flow.collectLatest
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     onNavigateToTopics: (Int) -> Unit,
-    onNavigateToProfile: () -> Unit, // <--- Добавляем новый колбэк
-    onNavigateToSearch: () -> Unit, // <--- 1. ДОБАВЛЯЕМ ЭТОТ ПАРАМЕТР
-    onNavigateToFavorites: () -> Unit, // <--- 1. НОВЫЙ ПАРАМЕТР
-    onNavigateToLeaderboard: () -> Unit, // <--- Новый параметр
-    onNavigateToTeacherGroups: () -> Unit, // <--- НОВЫЙ КОЛБЭК
+    onNavigateToProfile: () -> Unit,
+    onNavigateToSearch: () -> Unit,
+    onNavigateToFavorites: () -> Unit,
+    onNavigateToLeaderboard: () -> Unit,
+    onNavigateToTeacherGroups: () -> Unit,
     onNavigateToFlashcards: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
 
-    // Обработка навигации
     LaunchedEffect(key1 = true) {
         viewModel.effect.collectLatest { effect ->
             when (effect) {
                 is HomeContract.Effect.NavigateToTopics -> onNavigateToTopics(effect.disciplineId)
-                // Обработка навигации
                 is HomeContract.Effect.NavigateToTeacherGroups -> onNavigateToTeacherGroups()
             }
         }
@@ -57,30 +52,24 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text("Дисциплины") },
                 actions = {
-                    IconButton(onClick = onNavigateToFlashcards) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Повторение")
+                    if (state.engagementStatus != null && state.engagementStatus!!.streak > 0) {
+                        StreakBadge(streak = state.engagementStatus!!.streak)
                     }
-                    // Поиск
                     IconButton(onClick = onNavigateToSearch) {
                         Icon(Icons.Default.Search, contentDescription = "Поиск")
                     }
-
-                    // КНОПКА РЕЙТИНГА
-                    IconButton(onClick = onNavigateToLeaderboard) {
-                        Icon(Icons.Default.EmojiEvents, contentDescription = "Рейтинг") // Кубок
+                    IconButton(onClick = onNavigateToFlashcards) {
+                        Icon(Icons.Default.Style, contentDescription = "Карточки")
                     }
-
-                    // ИЗБРАННОЕ (СЕРДЕЧКО)
-                    IconButton(onClick = onNavigateToFavorites) { // <--- 2. ВЫЗОВ
+                    IconButton(onClick = onNavigateToLeaderboard) {
+                        Icon(Icons.Default.EmojiEvents, contentDescription = "Рейтинг")
+                    }
+                    IconButton(onClick = onNavigateToFavorites) {
                         Icon(Icons.Default.Favorite, contentDescription = "Избранное")
                     }
-
-                    // Профиль
                     IconButton(onClick = onNavigateToProfile) {
                         Icon(Icons.Default.Person, contentDescription = "Профиль")
                     }
-
-                    // --- КНОПКА ГРУПП (Только для учителя) ---
                     if (state.isTeacher) {
                         IconButton(onClick = { viewModel.setEvent(HomeContract.Event.OnTeacherGroupsClicked) }) {
                             Icon(Icons.Default.Group, contentDescription = "Мои группы")
@@ -90,41 +79,56 @@ fun HomeScreen(
             )
         }
     ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentAlignment = Alignment.Center
+        // --- ОБЕРТКА PULL TO REFRESH ---
+        CommonPullToRefreshBox(
+            isRefreshing = state.isLoading,
+            onRefresh = { viewModel.setEvent(HomeContract.Event.OnRefresh) },
+            modifier = Modifier.padding(paddingValues).fillMaxSize()
         ) {
-            when {
-                // 1. Загрузка
-                state.isLoading -> LoadingScreen()
+            // Внутренний контент
+            Box(modifier = Modifier.fillMaxSize()) {
+                when {
+                    // Показываем лоадер по центру только если список пуст (первый запуск)
+                    state.isLoading && state.disciplines.isEmpty() -> {
+                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    }
 
-                // 2. Ошибка
-                state.error != null -> {
-                    ErrorScreen(
-                        message = state.error ?: "Неизвестная ошибка",
-                        onRetry = { viewModel.setEvent(HomeContract.Event.OnRetryClicked) }
-                    )
-                }
-
-                // 3. Пустой список (если вдруг с сервера пришел пустой массив)
-                state.disciplines.isEmpty() -> {
-                    EmptyScreen(message = "Список дисциплин пуст")
-                }
-
-                // 4. Контент
-                else -> {
-                    LazyColumn(
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(state.disciplines) { discipline ->
-                            DisciplineCard(
-                                name = discipline.name,
-                                description = discipline.description,
-                                onClick = { viewModel.setEvent(HomeContract.Event.OnDisciplineClicked(discipline.id)) }
+                    state.error != null -> {
+                        Box(modifier = Modifier.align(Alignment.Center)) {
+                            ErrorScreen(
+                                message = state.error ?: "Неизвестная ошибка",
+                                onRetry = { viewModel.setEvent(HomeContract.Event.OnRetryClicked) }
                             )
+                        }
+                    }
+
+                    else -> {
+                        LazyColumn(
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            // Виджет цели
+                            if (state.engagementStatus != null) {
+                                item {
+                                    DailyGoalCard(status = state.engagementStatus!!)
+                                }
+                            }
+
+                            // Список дисциплин
+                            items(state.disciplines) { discipline ->
+                                DisciplineCard(
+                                    name = discipline.name,
+                                    description = discipline.description,
+                                    onClick = { viewModel.setEvent(HomeContract.Event.OnDisciplineClicked(discipline.id)) }
+                                )
+                            }
+
+                            if (state.disciplines.isEmpty()) {
+                                item {
+                                    EmptyScreen(message = "Список дисциплин пуст")
+                                }
+                            }
                         }
                     }
                 }
