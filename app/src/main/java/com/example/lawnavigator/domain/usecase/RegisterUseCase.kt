@@ -9,15 +9,13 @@ import javax.inject.Inject
 class RegisterUseCase @Inject constructor(
     private val repository: AuthRepository
 ) {
-    /**
-     * Запускает процесс регистрации.
-     * Оператор invoke позволяет вызывать класс как функцию: registerUseCase(...)
-     */
-    suspend operator fun invoke(email: String, password: String): Result<Unit> {
-        // Здесь можно добавить валидацию (например, длина пароля > 6) перед отправкой
+    suspend operator fun invoke(email: String, password: String, name: String, inviteCode: String?): Result<Unit> {
         if (password.length < 6) {
-            return Result.failure(IllegalArgumentException("Пароль слишком короткий"))
+            return Result.failure(IllegalArgumentException("Пароль слишком короткий (минимум 6 символов)"))
         }
-        return repository.register(email, password)
+        if (name.isBlank()) {
+            return Result.failure(IllegalArgumentException("Введите ваше имя"))
+        }
+        return repository.register(email, password, name, inviteCode)
     }
 }

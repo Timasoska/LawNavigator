@@ -7,15 +7,6 @@ package com.example.lawnavigator.domain.repository
  */
 interface AuthRepository {
 
-    /**
-     * Выполняет регистрацию пользователя.
-     * @return Result<Unit> - успешно или ошибка.
-     */
-    suspend fun register(email: String, password: String): Result<Unit>
-
-    /**
-     * Выполняет вход пользователя.
-     * @return Result<Unit> - успешно или ошибка.
-     */
     suspend fun login(email: String, password: String): Result<Unit>
+    suspend fun register(email: String, password: String, name: String, inviteCode: String?): Result<Unit>
 }

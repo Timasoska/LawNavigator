@@ -6,22 +6,40 @@ import com.example.lawnavigator.core.mvi.ViewState
 
 class LoginContract {
 
-    // Состояние: Добавили флаг видимости пароля
     data class State(
+        // Основные поля
         val email: String = "",
         val password: String = "",
-        val isPasswordVisible: Boolean = false, // <--- НОВОЕ ПОЛЕ
+
+        // Новые поля для регистрации
+        val name: String = "",
+        val confirmPassword: String = "",
+        val inviteCode: String = "",
+
+        // Состояния UI
+        val isRegisterMode: Boolean = false, // true = Регистрация, false = Вход
+        val isTeacherMode: Boolean = false,  // true = Показать поле Invite Code
+        val isPasswordVisible: Boolean = false,
+
         val isLoading: Boolean = false,
         val error: String? = null
     ) : ViewState
 
-    // Намерения: Добавили событие переключения
     sealed class Event : ViewIntent {
+        // Ввод данных
         data class OnEmailChanged(val email: String) : Event()
         data class OnPasswordChanged(val password: String) : Event()
-        data object OnTogglePasswordVisibility : Event() // <--- НОВОЕ СОБЫТИЕ
-        data object OnLoginClicked : Event()
-        data object OnRegisterClicked : Event()
+        data class OnNameChanged(val name: String) : Event()
+        data class OnConfirmPasswordChanged(val pass: String) : Event()
+        data class OnInviteCodeChanged(val code: String) : Event()
+
+        // Переключатели
+        data object OnToggleMode : Event() // Вход <-> Регистрация
+        data object OnToggleTeacherMode : Event() // Студент <-> Учитель
+        data object OnTogglePasswordVisibility : Event()
+
+        // Действия
+        data object OnSubmitClicked : Event() // Единая кнопка (Войти или Создать)
         data object OnErrorShown : Event()
     }
 

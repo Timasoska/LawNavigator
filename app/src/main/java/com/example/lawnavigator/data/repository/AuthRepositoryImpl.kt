@@ -21,21 +21,14 @@ class AuthRepositoryImpl @Inject constructor(
     private val tokenManager: TokenManager
 ) : AuthRepository {
 
-    override suspend fun register(email: String, password: String): Result<Unit> {
+    override suspend fun register(email: String, password: String, name: String, inviteCode: String?): Result<Unit> {
         return try {
-            // При регистрации с телефона мы пока не передаем inviteCode,
-            // поэтому роль по умолчанию будет "student", которую вернет сервер.
-            val request = AuthRequestDto(email, password)
-
+            // Передаем все данные
+            val request = AuthRequestDto(email = email, password = password, name = name, inviteCode = inviteCode)
             val response = api.register(request)
-
-            // СОХРАНЯЕМ И ТОКЕН, И РОЛЬ (которую прислал сервер)
             tokenManager.saveAuthData(response.token, response.role)
-
             Result.success(Unit)
-        } catch (e: IOException) {
-            Result.failure(e)
-        } catch (e: HttpException) {
+        } catch (e: Exception) {
             Result.failure(e)
         }
     }
