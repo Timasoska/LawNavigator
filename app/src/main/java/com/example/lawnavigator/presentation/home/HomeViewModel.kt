@@ -22,6 +22,15 @@ class HomeViewModel @Inject constructor(
     init {
         checkRole()
         loadData()
+        observeUserName() // <--- ЗАПУСКАЕМ НАБЛЮДЕНИЕ ЗА ИМЕНЕМ
+    }
+
+    private fun observeUserName() {
+        viewModelScope.launch {
+            tokenManager.userName.collect { name ->
+                setState { copy(userName = name) }
+            }
+        }
     }
 
     private fun checkRole() {

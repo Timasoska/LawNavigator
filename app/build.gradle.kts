@@ -56,6 +56,11 @@ android {
 dependencies {
     implementation(libs.androidx.work.runtime.ktx.v290)
 
+    // Coil (Загрузка изображений)
+    // Coil (Загрузка изображений)
+    implementation(libs.coil.compose.v250)
+    implementation(libs.coil.svg) // Для поддержки SVG аватарок
+
     // Когда используем hilt-work, нужен еще и процессор аннотаций
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.core.splashscreen)

@@ -13,8 +13,8 @@ class HomeContract {
         val isLoading: Boolean = false,
         val error: String? = null,
         val isTeacher: Boolean = false,
-        // --- ГЕЙМИФИКАЦИЯ ---
-        val engagementStatus: EngagementStatus? = null
+        val engagementStatus: EngagementStatus? = null,
+        val userName: String = "User" // <--- НОВОЕ ПОЛЕ
     ) : ViewState
 
     sealed class Event : ViewIntent {

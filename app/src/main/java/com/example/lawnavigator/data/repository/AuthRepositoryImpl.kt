@@ -21,31 +21,20 @@ class AuthRepositoryImpl @Inject constructor(
     private val tokenManager: TokenManager
 ) : AuthRepository {
 
-    override suspend fun register(email: String, password: String, name: String, inviteCode: String?): Result<Unit> {
-        return try {
-            // Передаем все данные
-            val request = AuthRequestDto(email = email, password = password, name = name, inviteCode = inviteCode)
-            val response = api.register(request)
-            tokenManager.saveAuthData(response.token, response.role)
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
     override suspend fun login(email: String, password: String): Result<Unit> {
         return try {
-            val request = AuthRequestDto(email, password)
-            val response = api.login(request)
-
-            // СОХРАНЯЕМ И ТОКЕН, И РОЛЬ
-            tokenManager.saveAuthData(response.token, response.role)
-
+            val response = api.login(AuthRequestDto(email, password))
+            // Сохраняем token, role И name
+            tokenManager.saveAuthData(response.token, response.role, response.name)
             Result.success(Unit)
-        } catch (e: IOException) {
-            Result.failure(e)
-        } catch (e: HttpException) {
-            Result.failure(e)
-        }
+        } catch (e: Exception) { Result.failure(e) }
+    }
+
+    override suspend fun register(email: String, password: String, name: String, inviteCode: String?): Result<Unit> {
+        return try {
+            val response = api.register(AuthRequestDto(email, password, name, inviteCode))
+            tokenManager.saveAuthData(response.token, response.role, response.name)
+            Result.success(Unit)
+        } catch (e: Exception) { Result.failure(e) }
     }
 }

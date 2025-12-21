@@ -13,5 +13,6 @@ data class AuthRequestDto(
 @Serializable
 data class AuthResponseDto(
     val token: String,
-    val role: String // <--- Добавили роль
+    val role: String, // <--- Добавили роль
+    val name: String // <--- Добавили
 )

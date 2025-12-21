@@ -19,26 +19,33 @@ class TokenManager @Inject constructor(@ApplicationContext private val context: 
     companion object {
         private val TOKEN_KEY = stringPreferencesKey("jwt_token")
         private val ROLE_KEY = stringPreferencesKey("user_role")
-        private val THEME_KEY = stringPreferencesKey("app_theme") // <--- Новый ключ
+        private val NAME_KEY = stringPreferencesKey("user_name") // <--- Новый ключ для имени
+        private val THEME_KEY = stringPreferencesKey("app_theme")
     }
 
     val token: Flow<String?> = context.dataStore.data.map { it[TOKEN_KEY] }
 
-    // Если роли нет, считаем студентом (безопасный дефолт при чтении)
+    // Если роли нет, считаем студентом
     val role: Flow<String> = context.dataStore.data.map { it[ROLE_KEY] ?: "student" }
 
-    // Единственный правильный метод сохранения
-    suspend fun saveAuthData(token: String, role: String) {
+    // Читаем имя (по умолчанию "User", если еще не сохранено)
+    val userName: Flow<String> = context.dataStore.data.map { it[NAME_KEY] ?: "User" }
+
+    // Обновленный метод сохранения: теперь принимает и сохраняет имя
+    suspend fun saveAuthData(token: String, role: String, name: String) {
         context.dataStore.edit { preferences ->
             preferences[TOKEN_KEY] = token
             preferences[ROLE_KEY] = role
+            preferences[NAME_KEY] = name // <--- Сохраняем имя
         }
     }
 
+    // При выходе удаляем всё, включая имя
     suspend fun deleteToken() {
         context.dataStore.edit { preferences ->
             preferences.remove(TOKEN_KEY)
             preferences.remove(ROLE_KEY)
+            preferences.remove(NAME_KEY)
         }
     }
 

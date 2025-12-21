@@ -25,10 +25,12 @@ import com.example.lawnavigator.presentation.theme.ThemeMode
 import com.example.lawnavigator.presentation.utils.calculateTrendLocal
 import kotlinx.coroutines.flow.collectLatest
 import android.widget.Toast
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.GroupAdd
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.ui.platform.LocalContext
+import com.example.lawnavigator.presentation.components.UserAvatar
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -88,6 +90,7 @@ fun ProfileScreen(
             }
         )
     }
+
 
     // Диалог вступления в группу
     if (state.showJoinGroupDialog) {
@@ -221,13 +224,13 @@ fun ProfileScreen(
                     Text("Оформление:", style = MaterialTheme.typography.titleMedium)
                     Card(modifier = Modifier.padding(vertical = 8.dp)) {
                         Column(modifier = Modifier.padding(8.dp)) {
+
                             ThemeOption("Системная", state.themeMode == ThemeMode.SYSTEM) { viewModel.setEvent(ProfileContract.Event.OnThemeChanged(ThemeMode.SYSTEM)) }
                             ThemeOption("Светлая ☀️", state.themeMode == ThemeMode.LIGHT) { viewModel.setEvent(ProfileContract.Event.OnThemeChanged(ThemeMode.LIGHT)) }
                             ThemeOption("Темная 🌑", state.themeMode == ThemeMode.DARK) { viewModel.setEvent(ProfileContract.Event.OnThemeChanged(ThemeMode.DARK)) }
                         }
                     }
                 }
-
                 item {
                     Text("Динамика оценок:", style = MaterialTheme.typography.titleMedium)
                     if (displayHistory.isNotEmpty()) {
@@ -255,7 +258,9 @@ fun ProfileScreen(
                                 Spacer(modifier = Modifier.height(8.dp))
                                 LinearProgressIndicator(
                                     progress = { (disc.score / 100).toFloat() },
-                                    modifier = Modifier.fillMaxWidth().height(8.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(4.dp)),
+                                    modifier = Modifier.fillMaxWidth().height(8.dp).clip(
+                                        RoundedCornerShape(4.dp)
+                                    ),
                                     color = if (disc.score >= 60) Color(0xFF4CAF50) else Color(0xFFFFC107),
                                     trackColor = MaterialTheme.colorScheme.surfaceVariant
                                 )
