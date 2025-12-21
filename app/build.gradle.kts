@@ -54,6 +54,9 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.work.runtime.ktx.v290)
+
+    // Когда используем hilt-work, нужен еще и процессор аннотаций
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.core.splashscreen)
 
