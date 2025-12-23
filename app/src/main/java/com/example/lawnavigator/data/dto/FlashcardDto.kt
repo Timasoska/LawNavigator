@@ -13,7 +13,7 @@ data class FlashcardDto(
 data class FlashcardOptionDto(
     val id: Int,
     val text: String,
-    val isCorrect: Boolean = false // Бэкенд должен присылать это поле
+    val isCorrect: Boolean = false, // Бэкенд должен присылать это поле
 )
 
 @Serializable
