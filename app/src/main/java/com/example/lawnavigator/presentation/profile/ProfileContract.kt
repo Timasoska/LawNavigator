@@ -10,6 +10,8 @@ class ProfileContract {
 
     data class State(
         val email: String = "",
+        val userName: String = "Студент", // <--- ДОБАВИЛИ ПОЛЕ ИМЕНИ
+        val userRole: String = "student", // <--- ДОБАВЛЕНО НОВОЕ ПОЛЕ
         val analytics: UserAnalytics? = null,
         val isLoading: Boolean = false,
         val error: String? = null,

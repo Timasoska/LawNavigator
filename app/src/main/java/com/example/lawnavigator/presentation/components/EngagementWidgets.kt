@@ -60,7 +60,7 @@ fun DailyGoalCard(
                     .height(12.dp)
                     .clip(RoundedCornerShape(6.dp)),
                 color = if (status.isDailyGoalReached) Color(0xFF4CAF50) else MaterialTheme.colorScheme.primary,
-                trackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f)
+                trackColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -68,7 +68,7 @@ fun DailyGoalCard(
             Text(
                 text = "${status.todayXp} / ${status.dailyGoalXp} XP",
                 style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+                color = MaterialTheme.colorScheme.primaryContainer
             )
         }
     }

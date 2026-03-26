@@ -1,38 +1,32 @@
 package com.example.lawnavigator.presentation.login
 
 import android.widget.Toast
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import kotlinx.coroutines.flow.collectLatest
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.*
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.flow.collectLatest
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel = hiltViewModel(),
@@ -54,73 +48,69 @@ fun LoginScreen(
         }
     }
 
-    // Основной контейнер (Темный фон как на макете)
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF121212)) // Deep Charcoal
-            .padding(24.dp)
+            .background(MaterialTheme.colorScheme.background)
     ) {
+        Box(modifier = Modifier.offset(x = (-50).dp, y = (-50).dp).size(200.dp).background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f), CircleShape))
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState()), // Чтобы клавиатура не перекрывала
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // --- ЛОГОТИП И ЗАГОЛОВОК ---
-            Icon(
-                imageVector = Icons.Default.Balance, // Весы правосудия
-                contentDescription = null,
-                tint = Color(0xFF5C6BC0), // Мягкий синий
-                modifier = Modifier.size(64.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .shadow(20.dp, CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.Balance, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(40.dp))
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = if (state.isRegisterMode) "Создание аккаунта" else "С возвращением!",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
+                text = if (state.isRegisterMode) "Создание аккаунта" else "С возвращением, Юрист",
+                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface)
             )
 
             Text(
-                text = "Ваш путь в юриспруденцию начинается здесь.",
+                text = "Ваш путь к адвокатуре продолжается здесь.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray,
-                modifier = Modifier.padding(top = 8.dp, bottom = 32.dp)
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 8.dp, bottom = 40.dp)
             )
 
-            // --- ПОЛЯ ВВОДА ---
-
-            // ИМЯ (Только при регистрации)
             AnimatedVisibility(visible = state.isRegisterMode) {
                 Column {
-                    CustomTextField(
+                    StitchTextField(
                         value = state.name,
                         onValueChange = { viewModel.setEvent(LoginContract.Event.OnNameChanged(it)) },
-                        label = "Как к вам обращаться?",
+                        label = "Имя и Фамилия",
                         icon = Icons.Default.Person
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                 }
             }
 
-            // EMAIL
-            CustomTextField(
+            StitchTextField(
                 value = state.email,
                 onValueChange = { viewModel.setEvent(LoginContract.Event.OnEmailChanged(it)) },
-                label = "Email адрес",
+                label = "Email Адрес",
                 icon = Icons.Default.Email,
                 keyboardType = KeyboardType.Email
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // ПАРОЛЬ
-            CustomTextField(
+            StitchTextField(
                 value = state.password,
                 onValueChange = { viewModel.setEvent(LoginContract.Event.OnPasswordChanged(it)) },
                 label = "Пароль",
@@ -130,101 +120,86 @@ fun LoginScreen(
                 onToggleVisibility = { viewModel.setEvent(LoginContract.Event.OnTogglePasswordVisibility) }
             )
 
-            // ПОДТВЕРЖДЕНИЕ ПАРОЛЯ (Только регистрация)
             AnimatedVisibility(visible = state.isRegisterMode) {
                 Column {
                     Spacer(modifier = Modifier.height(16.dp))
-                    CustomTextField(
+                    StitchTextField(
                         value = state.confirmPassword,
                         onValueChange = { viewModel.setEvent(LoginContract.Event.OnConfirmPasswordChanged(it)) },
                         label = "Повторите пароль",
                         icon = Icons.Default.Lock,
                         isPassword = true,
                         isVisible = state.isPasswordVisible,
+                        onToggleVisibility = { viewModel.setEvent(LoginContract.Event.OnTogglePasswordVisibility) },
                         isError = state.password.isNotEmpty() && state.confirmPassword.isNotEmpty() && state.password != state.confirmPassword
                     )
                     if (state.password.isNotEmpty() && state.confirmPassword.isNotEmpty() && state.password != state.confirmPassword) {
-                        Text("Пароли не совпадают", color = Color(0xFFEF5350), fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp, start = 4.dp).align(Alignment.Start))
+                        Text("Пароли не совпадают", color = MaterialTheme.colorScheme.tertiary, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp, start = 4.dp).align(Alignment.Start))
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // --- КНОПКА ДЕЙСТВИЯ ---
-            Button(
-                onClick = { viewModel.setEvent(LoginContract.Event.OnSubmitClicked) },
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF5C6BC0), // Royal Blue
-                    disabledContainerColor = Color(0xFF3949AB).copy(alpha = 0.5f)
-                ),
-                enabled = !state.isLoading
+                    .height(56.dp)
+                    .shadow(16.dp, CircleShape, spotColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
+                    .background(Brush.linearGradient(listOf(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.primary)), CircleShape)
+                    .clickable(enabled = !state.isLoading) { viewModel.setEvent(LoginContract.Event.OnSubmitClicked) },
+                contentAlignment = Alignment.Center
             ) {
                 if (state.isLoading) {
-                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.background, modifier = Modifier.size(24.dp))
                 } else {
                     Text(
                         text = if (state.isRegisterMode) "Создать аккаунт" else "Войти",
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
                         fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- ПЕРЕКЛЮЧЕНИЕ РЕЖИМА ---
             Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(text = if (state.isRegisterMode) "Уже есть аккаунт? " else "Нет аккаунта? ", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(
-                    text = if (state.isRegisterMode) "Уже есть аккаунт? " else "Нет аккаунта? ",
-                    color = Color.Gray
-                )
-                Text(
-                    text = if (state.isRegisterMode) "Войти" else "Создать аккаунт",
-                    color = Color(0xFF5C6BC0),
+                    text = if (state.isRegisterMode) "Войти" else "Создать",
+                    color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.clickable { viewModel.setEvent(LoginContract.Event.OnToggleMode) }
                 )
             }
 
-            // --- НИЖНЯЯ КНОПКА (INVITE CODE) ---
-            // Показываем только при регистрации
             AnimatedVisibility(visible = state.isRegisterMode) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Spacer(modifier = Modifier.height(32.dp))
-
-                    // Кнопка-переключатель "Enter with Invite Code"
                     if (!state.isTeacherMode) {
-                        TextButton(
-                            onClick = { viewModel.setEvent(LoginContract.Event.OnToggleTeacherMode) },
-                            colors = ButtonDefaults.textButtonColors(contentColor = Color.Gray)
-                        ) {
-                            Icon(Icons.Default.ConfirmationNumber, contentDescription = null, modifier = Modifier.size(18.dp))
+                        TextButton(onClick = { viewModel.setEvent(LoginContract.Event.OnToggleTeacherMode) }) {
+                            Icon(Icons.Default.ConfirmationNumber, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("У меня есть код приглашения (Преподаватель)")
+                            Text("Ввести инвайт-код (Преподаватель)", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     } else {
-                        // Поле ввода кода
                         Card(
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF2C2C2C)),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
-                                Text("Код приглашения", color = Color.Gray, fontSize = 12.sp)
+                                Text("Код приглашения", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                                 BasicTextField(
                                     value = state.inviteCode,
                                     onValueChange = { viewModel.setEvent(LoginContract.Event.OnInviteCodeChanged(it)) },
-                                    textStyle = LocalTextStyle.current.copy(color = Color.White, fontSize = 16.sp),
+                                    textStyle = LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp),
                                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
                                 )
                             }
                         }
                         TextButton(onClick = { viewModel.setEvent(LoginContract.Event.OnToggleTeacherMode) }) {
-                            Text("Отмена", color = Color.Gray)
+                            Text("Отмена", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -233,9 +208,8 @@ fun LoginScreen(
     }
 }
 
-// Вспомогательный компонент для красивых полей
 @Composable
-fun CustomTextField(
+fun StitchTextField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
@@ -246,37 +220,32 @@ fun CustomTextField(
     onToggleVisibility: (() -> Unit)? = null,
     isError: Boolean = false
 ) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        leadingIcon = { Icon(icon, contentDescription = null, tint = Color.Gray) },
-        trailingIcon = if (isPassword) {
-            {
-                IconButton(onClick = { onToggleVisibility?.invoke() }) {
-                    Icon(
-                        imageVector = if (isVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                        contentDescription = null,
-                        tint = Color.Gray
-                    )
+    Column(modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth()) {
+        Text(text = label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(start = 4.dp, bottom = 4.dp))
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                focusedBorderColor = if (isError) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = if (isError) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outlineVariant,
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+            ),
+            leadingIcon = { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+            trailingIcon = if (isPassword) {
+                {
+                    IconButton(onClick = { onToggleVisibility?.invoke() }) {
+                        Icon(if (isVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
-            }
-        } else null,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = if (isError) Color(0xFFEF5350) else Color(0xFF5C6BC0),
-            unfocusedBorderColor = if (isError) Color(0xFFEF5350) else Color(0xFF424242),
-            focusedContainerColor = Color(0xFF1E1E1E),
-            unfocusedContainerColor = Color(0xFF1E1E1E),
-            focusedLabelColor = if (isError) Color(0xFFEF5350) else Color(0xFF5C6BC0),
-            unfocusedLabelColor = Color.Gray,
-            cursorColor = Color.White,
-            focusedTextColor = Color.White,
-            unfocusedTextColor = Color.White
-        ),
-        visualTransformation = if (isPassword && !isVisible) PasswordVisualTransformation() else VisualTransformation.None,
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-        singleLine = true
-    )
+            } else null,
+            visualTransformation = if (isPassword && !isVisible) PasswordVisualTransformation() else VisualTransformation.None,
+            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+            singleLine = true
+        )
+    }
 }

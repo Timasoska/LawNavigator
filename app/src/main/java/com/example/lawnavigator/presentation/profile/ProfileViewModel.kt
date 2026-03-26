@@ -33,6 +33,7 @@ class ProfileViewModel @Inject constructor(
     init {
         loadData()
         observeTheme()
+        observeUserInfo()
     }
 
     private fun observeTheme() {
@@ -40,6 +41,24 @@ class ProfileViewModel @Inject constructor(
             tokenManager.themeMode.collect { mode -> setState { copy(themeMode = mode) } }
         }
     }
+
+    private fun observeUserInfo() {
+        viewModelScope.launch {
+            // Подписываемся на имя
+            launch {
+                tokenManager.userName.collect { name ->
+                    setState { copy(userName = name) }
+                }
+            }
+            // Подписываемся на роль
+            launch {
+                tokenManager.role.collect { role ->
+                    setState { copy(userRole = role) }
+                }
+            }
+        }
+    }
+
 
     override fun handleEvent(event: ProfileContract.Event) {
         when (event) {

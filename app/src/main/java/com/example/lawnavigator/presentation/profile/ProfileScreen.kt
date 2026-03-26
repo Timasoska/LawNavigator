@@ -25,12 +25,23 @@ import com.example.lawnavigator.presentation.theme.ThemeMode
 import com.example.lawnavigator.presentation.utils.calculateTrendLocal
 import kotlinx.coroutines.flow.collectLatest
 import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.GroupAdd
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PriorityHigh
+import androidx.compose.material.icons.filled.QueryStats
+import androidx.compose.material.icons.filled.SettingsBrightness
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.sp
 import com.example.lawnavigator.presentation.components.UserAvatar
+import com.example.lawnavigator.presentation.theme.*
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,7 +51,7 @@ fun ProfileScreen(
     onNavigateToLogin: () -> Unit,
     onNavigateBack: () -> Unit,
     onNavigateToTopic: (Int) -> Unit,
-    onNavigateToDisciplineDetails: (Int, String) -> Unit // <--- ДОБАВЬ ЭТО
+    onNavigateToDisciplineDetails: (Int, String) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
@@ -67,39 +78,39 @@ fun ProfileScreen(
         }
     }
 
-    // --- ДИАЛОГ СПИСКА УЧАСТНИКОВ (НОВОЕ) ---
     if (state.showMembersDialog) {
         AlertDialog(
+            containerColor = MaterialTheme.colorScheme.surface,
             onDismissRequest = { viewModel.setEvent(ProfileContract.Event.OnDismissDialog) },
-            title = { Text("Участники группы") },
+            title = { Text("Участники группы", color = MaterialTheme.colorScheme.onSurface) },
             text = {
                 LazyColumn(modifier = Modifier.heightIn(max = 300.dp)) {
                     items(state.groupMembers) { email ->
                         ListItem(
-                            headlineContent = { Text(email) },
-                            leadingContent = { Icon(Icons.Default.Person, null) }
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                            headlineContent = { Text(email, color = MaterialTheme.colorScheme.onSurface) },
+                            leadingContent = { Icon(Icons.Default.Person, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }
                         )
-                        HorizontalDivider()
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                     }
                 }
             },
             confirmButton = {
                 TextButton(onClick = { viewModel.setEvent(ProfileContract.Event.OnDismissDialog) }) {
-                    Text("Закрыть")
+                    Text("Закрыть", color = MaterialTheme.colorScheme.primary)
                 }
             }
         )
     }
 
-
-    // Диалог вступления в группу
     if (state.showJoinGroupDialog) {
         AlertDialog(
+            containerColor = MaterialTheme.colorScheme.surface,
             onDismissRequest = { viewModel.setEvent(ProfileContract.Event.OnDismissDialog) },
-            title = { Text("Вступить в группу") },
+            title = { Text("Вступить в группу", color = MaterialTheme.colorScheme.onSurface) },
             text = {
                 Column {
-                    Text("Введите код приглашения:")
+                    Text("Введите код приглашения:", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = state.inviteCodeInput,
@@ -110,26 +121,28 @@ fun ProfileScreen(
                 }
             },
             confirmButton = {
-                Button(onClick = { viewModel.setEvent(ProfileContract.Event.OnConfirmJoinGroup) }) { Text("Вступить") }
+                Button(onClick = { viewModel.setEvent(ProfileContract.Event.OnConfirmJoinGroup) }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) { Text("Вступить", color = MaterialTheme.colorScheme.onPrimaryContainer) }
             },
             dismissButton = {
-                TextButton(onClick = { viewModel.setEvent(ProfileContract.Event.OnDismissDialog) }) { Text("Отмена") }
+                TextButton(onClick = { viewModel.setEvent(ProfileContract.Event.OnDismissDialog) }) { Text("Отмена", color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
         )
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("Профиль") },
+                title = { Text("Профиль", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary) },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.9f)),
                 navigationIcon = {
                     IconButton(onClick = { viewModel.setEvent(ProfileContract.Event.OnBackClicked) }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Назад")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Назад", tint = MaterialTheme.colorScheme.primary)
                     }
                 },
                 actions = {
                     IconButton(onClick = { viewModel.setEvent(ProfileContract.Event.OnLogoutClicked) }) {
-                        Icon(Icons.AutoMirrored.Filled.ExitToApp, "Выход")
+                        Icon(Icons.AutoMirrored.Filled.ExitToApp, "Выход", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             )
@@ -142,127 +155,205 @@ fun ProfileScreen(
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp)
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                // 1. ПРОФИЛЬ И СТРИК
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+
+                            // АВАТАРКА (используем имя из состояния)
+                            UserAvatar(name = state.userName, size = 64.dp)
+
+                            Spacer(modifier = Modifier.width(16.dp))
+
+                            Column {
+                                // ИМЯ (Крупно)
+                                Text(
+                                    text = state.userName,
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+
+                                // РОЛЬ (Динамически из состояния)
+                                val roleText = if (state.userRole == "teacher") "Преподаватель" else "Студент"
+                                val roleColor = if (state.userRole == "teacher") MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
+
+                                Text(
+                                    text = roleText,
+                                    color = roleColor,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 1.sp
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // 2. ВСТУПИТЬ В ГРУППУ
                 item {
                     Button(
                         onClick = { viewModel.setEvent(ProfileContract.Event.OnJoinGroupClicked) },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant, contentColor = MaterialTheme.colorScheme.onSurface)
                     ) {
-                        Icon(Icons.Default.GroupAdd, null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Вступить в группу по коду")
+                        Icon(Icons.Default.GroupAdd, null, tint = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text("Вступить в группу по коду", fontWeight = FontWeight.Bold)
                     }
-                    Spacer(modifier = Modifier.height(16.dp))
                 }
 
+                // 3. МОИ ГРУППЫ
                 item {
                     state.analytics?.let { analytics ->
                         if (analytics.groups.isNotEmpty()) {
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+                            Column(
+                                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface).padding(20.dp)
                             ) {
-                                Column(modifier = Modifier.padding(16.dp)) {
-                                    Text("Мои группы (нажми для списка):", fontWeight = FontWeight.Bold)
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    analytics.groups.forEach { group ->
-                                        Surface(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .clickable { viewModel.setEvent(ProfileContract.Event.OnGroupClicked(group.id)) }, // Теперь ID реальный
-                                            color = Color.Transparent
-                                        ) {
-                                            Text(
-                                                text = "• ${group.name}",
-                                                modifier = Modifier.padding(vertical = 4.dp),
-                                                style = MaterialTheme.typography.bodyLarge
-                                            )
+                                Text("МОИ ГРУППЫ", color = MaterialTheme.colorScheme.outlineVariant, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp, modifier = Modifier.padding(bottom = 12.dp))
+                                analytics.groups.forEach { group ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().clickable { viewModel.setEvent(ProfileContract.Event.OnGroupClicked(group.id)) }.padding(vertical = 8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Box(modifier = Modifier.size(32.dp).background(MaterialTheme.colorScheme.primaryContainer.copy(0.2f), CircleShape), contentAlignment = Alignment.Center) {
+                                            Icon(Icons.Default.Group, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
                                         }
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        Text(text = group.name, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.outlineVariant)
                                     }
                                 }
                             }
-                            Spacer(modifier = Modifier.height(16.dp))
                         }
                     }
                 }
 
+                // 4. СТАТИСТИКА И СИМУЛЯТОР
                 item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (isSimulationMode) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.primaryContainer
-                        )
+                    Column(
+                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(if (isSimulationMode) MaterialTheme.colorScheme.tertiaryContainer.copy(0.2f) else MaterialTheme.colorScheme.primaryContainer.copy(0.1f)).border(1.dp, if (isSimulationMode) MaterialTheme.colorScheme.tertiary.copy(0.3f) else MaterialTheme.colorScheme.primary.copy(0.3f), RoundedCornerShape(16.dp)).padding(20.dp)
                     ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                                Text(if (isSimulationMode) "Симулятор оценок" else "Ваш прогресс", style = MaterialTheme.typography.titleLarge)
-                                Switch(checked = isSimulationMode, onCheckedChange = { isSimulationMode = it })
-                            }
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                Column {
-                                    Text("Пройдено тестов: $displayPassedTests")
-                                    Text("Средний балл: ${String.format("%.1f", displayAvg)}")
-                                    val prediction = (displayAvg + displayTrend).coerceIn(0.0, 100.0)
-                                    Text("Прогноз: ${String.format("%.1f", prediction)}", fontWeight = FontWeight.Bold)
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                            Text(if (isSimulationMode) "СИМУЛЯТОР" else "ПРОГРЕСС", color = if (isSimulationMode) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
+                            Switch(checked = isSimulationMode, onCheckedChange = { isSimulationMode = it }, colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.background, checkedTrackColor = MaterialTheme.colorScheme.tertiary))
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            Column {
+                                Text("Средний балл", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                                Text("${String.format("%.1f", displayAvg)}%", fontSize = 36.sp, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onSurface)
+
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text("Пройдено тестов: $displayPassedTests", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+
+                                // --- ВОЗВРАЩЕННЫЙ БЛОК ПРОГНОЗА ---
+                                val prediction = (displayAvg + displayTrend).coerceIn(0.0, 100.0)
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), RoundedCornerShape(6.dp)).padding(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Icon(Icons.Default.QueryStats, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "Прогноз: ${String.format("%.1f", prediction)}%",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isSimulationMode) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
+                                    )
                                 }
-                                TrendIndicator(trend = displayTrend)
+                                // ----------------------------------
                             }
-                            if (isSimulationMode) {
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Text("След. оценка: ${simulatedScore.toInt()}")
-                                Slider(value = simulatedScore, onValueChange = { simulatedScore = it }, valueRange = 0f..100f, steps = 19)
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text("Тренд (МНК)", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, modifier = Modifier.padding(bottom = 4.dp))
+                                MiniTrendIndicator(trend = displayTrend)
                             }
                         }
-                    }
-                    Spacer(modifier = Modifier.height(24.dp))
-                }
-
-                item {
-                    Text("Оформление:", style = MaterialTheme.typography.titleMedium)
-                    Card(modifier = Modifier.padding(vertical = 8.dp)) {
-                        Column(modifier = Modifier.padding(8.dp)) {
-
-                            ThemeOption("Системная", state.themeMode == ThemeMode.SYSTEM) { viewModel.setEvent(ProfileContract.Event.OnThemeChanged(ThemeMode.SYSTEM)) }
-                            ThemeOption("Светлая ☀️", state.themeMode == ThemeMode.LIGHT) { viewModel.setEvent(ProfileContract.Event.OnThemeChanged(ThemeMode.LIGHT)) }
-                            ThemeOption("Темная 🌑", state.themeMode == ThemeMode.DARK) { viewModel.setEvent(ProfileContract.Event.OnThemeChanged(ThemeMode.DARK)) }
+                        if (isSimulationMode) {
+                            Spacer(modifier = Modifier.height(24.dp))
+                            Text("Добавить оценку: ${simulatedScore.toInt()}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                            Slider(value = simulatedScore, onValueChange = { simulatedScore = it }, valueRange = 0f..100f, steps = 19, colors = SliderDefaults.colors(thumbColor = MaterialTheme.colorScheme.tertiary, activeTrackColor = MaterialTheme.colorScheme.tertiary))
                         }
                     }
                 }
-                item {
-                    Text("Динамика оценок:", style = MaterialTheme.typography.titleMedium)
-                    if (displayHistory.isNotEmpty()) {
-                        ScoreChart(scores = displayHistory, modifier = Modifier.fillMaxWidth().height(150.dp).padding(vertical = 8.dp))
-                    }
-                }
 
-                val disciplines = state.analytics?.disciplines ?: emptyList()
-                items(disciplines) { disc ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                            // ТЕПЕРЬ ВСЁ РАБОТАЕТ КОРРЕКТНО
-                            .clickable { onNavigateToDisciplineDetails(disc.id, disc.name) },
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        elevation = CardDefaults.cardElevation(1.dp)
+                // ВЫБОР ТЕМЫ
+                item {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface).padding(20.dp)
                     ) {
+                        Text("ОФОРМЛЕНИЕ", color = MaterialTheme.colorScheme.outlineVariant, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp, modifier = Modifier.padding(bottom = 16.dp))
+
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            ThemeButton("Авто", Icons.Default.SettingsBrightness, state.themeMode == ThemeMode.SYSTEM, { viewModel.setEvent(ProfileContract.Event.OnThemeChanged(ThemeMode.SYSTEM)) }, Modifier.weight(1f))
+                            ThemeButton("Светлая", Icons.Default.LightMode, state.themeMode == ThemeMode.LIGHT, { viewModel.setEvent(ProfileContract.Event.OnThemeChanged(ThemeMode.LIGHT)) }, Modifier.weight(1f))
+                            ThemeButton("Темная", Icons.Default.DarkMode, state.themeMode == ThemeMode.DARK, { viewModel.setEvent(ProfileContract.Event.OnThemeChanged(ThemeMode.DARK)) }, Modifier.weight(1f))
+                        }
+                    }
+                }
+
+                item {
+                    if (displayHistory.isNotEmpty()) {
                         Row(
-                            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp, top = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "ДИНАМИКА",
+                                color = MaterialTheme.colorScheme.outlineVariant,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Black,
+                                letterSpacing = 1.sp
+                            )
+                            // --- ЛЕГЕНДА ГРАФИКА ---
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(modifier = Modifier.size(8.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Реальность", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+
+                                Spacer(modifier = Modifier.width(12.dp))
+
+                                Box(modifier = Modifier.size(8.dp).background(MaterialTheme.colorScheme.tertiary, CircleShape))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Симулятор", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+                            }
+                        }
+
+                        ScoreChart(
+                            scores = displayHistory,
+                            modifier = Modifier.fillMaxWidth().height(180.dp),
+                            graphColor = if (isSimulationMode) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
+                // 6. ПРЕДМЕТЫ
+                val disciplines = state.analytics?.disciplines ?: emptyList()
+                if (disciplines.isNotEmpty()) {
+                    item { Text("ПО ДИСЦИПЛИНАМ", color = MaterialTheme.colorScheme.outlineVariant, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp, modifier = Modifier.padding(bottom = 0.dp, top = 8.dp)) }
+                    items(disciplines) { disc ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface).clickable { onNavigateToDisciplineDetails(disc.id, disc.name) }.padding(20.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(text = disc.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(text = disc.name, color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.height(12.dp))
                                 LinearProgressIndicator(
                                     progress = { (disc.score / 100).toFloat() },
-                                    modifier = Modifier.fillMaxWidth().height(8.dp).clip(
-                                        RoundedCornerShape(4.dp)
-                                    ),
-                                    color = if (disc.score >= 60) Color(0xFF4CAF50) else Color(0xFFFFC107),
-                                    trackColor = MaterialTheme.colorScheme.surfaceVariant
+                                    modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
+                                    color = if (disc.score >= 60) Color(0xFF4CAF50) else MaterialTheme.colorScheme.tertiary,
+                                    trackColor = MaterialTheme.colorScheme.surfaceTint
                                 )
                             }
                             Spacer(modifier = Modifier.width(16.dp))
@@ -271,15 +362,97 @@ fun ProfileScreen(
                     }
                 }
 
-                item { Text("Рекомендации:", modifier = Modifier.padding(top = 16.dp), style = MaterialTheme.typography.titleMedium) }
+                // --- ВОЗВРАЩЕННЫЙ БЛОК РЕКОМЕНДАЦИЙ (ЗАПАДАЮЩИЕ ТЕМЫ) ---
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        "РЕКОМЕНДУЕТСЯ ПОВТОРИТЬ",
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 1.sp,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
+
                 val recs = state.analytics?.recommendations ?: emptyList()
-                items(recs) { topic ->
-                    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { viewModel.setEvent(ProfileContract.Event.OnRecommendationClicked(topic.id)) }) {
-                        Text(topic.name, modifier = Modifier.padding(16.dp))
+                if (recs.isEmpty()) {
+                    item {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)).border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), RoundedCornerShape(16.dp)).padding(20.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("У вас нет западающих тем! 🎉", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
+                        }
+                    }
+                } else {
+                    items(recs) { topic ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.15f))
+                                .border(1.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
+                                .clickable { viewModel.setEvent(ProfileContract.Event.OnRecommendationClicked(topic.id)) }
+                                .padding(20.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier.size(40.dp).background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f), RoundedCornerShape(10.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.PriorityHigh, contentDescription = "Внимание", tint = MaterialTheme.colorScheme.tertiary)
+                            }
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = topic.name,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    lineHeight = 20.sp
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    "Низкий результат или резкий спад",
+                                    color = MaterialTheme.colorScheme.tertiary,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary)
+                        }
                     }
                 }
+                // --------------------------------------------------------
+
                 item { Spacer(modifier = Modifier.height(100.dp)) }
             }
         }
+    }
+}
+
+@Composable
+fun ThemeButton(
+    text: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val backgroundColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceTint
+    val contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(backgroundColor)
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(icon, contentDescription = null, tint = contentColor, modifier = Modifier.size(20.dp))
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(text, color = contentColor, fontSize = 12.sp, fontWeight = FontWeight.Bold)
     }
 }

@@ -30,11 +30,22 @@ import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.sp
 import com.example.lawnavigator.BuildConfig // Убедись, что импортируется BuildConfig твоего пакета
+import com.example.lawnavigator.presentation.theme.*
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -126,15 +137,14 @@ fun LectureScreen(
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text(if (state.isEditing) "Редактирование" else state.lecture?.title ?: "Лекция", maxLines = 1) },
+                title = { Text(if (state.isEditing) "Редактирование" else "", maxLines = 1) },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.9f)),
                 navigationIcon = {
-                    IconButton(onClick = {
-                        if (state.isEditing) viewModel.setEvent(LectureContract.Event.OnCancelEditClicked)
-                        else saveAndExit()
-                    }) {
-                        Icon(if (state.isEditing) Icons.Default.Close else Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    IconButton(onClick = { if (state.isEditing) viewModel.setEvent(LectureContract.Event.OnCancelEditClicked) else saveAndExit() }) {
+                        Icon(if (state.isEditing) Icons.Default.Close else Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад", tint = MaterialTheme.colorScheme.primary)
                     }
                 },
                 actions = {
@@ -143,131 +153,99 @@ fun LectureScreen(
                             Icon(Icons.Default.Check, contentDescription = "Сохранить", tint = MaterialTheme.colorScheme.primary)
                         }
                     } else {
-                        // --- ИНСТРУМЕНТЫ УЧИТЕЛЯ ---
                         if (state.isTeacher) {
-                            // 1. Скрепка (Прикрепить файл)
-                            IconButton(onClick = { fileLauncher.launch("*/*") }) {
-                                Icon(Icons.Default.AttachFile, contentDescription = "Прикрепить файл")
-                            }
-                            // 2. Редактировать
-                            IconButton(onClick = { viewModel.setEvent(LectureContract.Event.OnEditClicked) }) {
-                                Icon(Icons.Default.Edit, contentDescription = "Редактировать")
-                            }
-                            // 3. Удалить
-                            IconButton(onClick = { viewModel.setEvent(LectureContract.Event.OnDeleteClicked) }) {
-                                Icon(Icons.Default.Delete, contentDescription = "Удалить", tint = MaterialTheme.colorScheme.error)
-                            }
+                            IconButton(onClick = { fileLauncher.launch("*/*") }) { Icon(Icons.Default.AttachFile, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+                            IconButton(onClick = { viewModel.setEvent(LectureContract.Event.OnEditClicked) }) { Icon(Icons.Default.Edit, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+                            IconButton(onClick = { viewModel.setEvent(LectureContract.Event.OnDeleteClicked) }) { Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.tertiary) }
                         }
-
-                        // --- ИНСТРУМЕНТЫ ДЛЯ ВСЕХ ---
                         IconButton(onClick = { viewModel.setEvent(LectureContract.Event.OnFavoriteClicked) }) {
                             Icon(
                                 imageVector = if (state.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                                 contentDescription = "Favorite",
-                                tint = MaterialTheme.colorScheme.primary
+                                tint = if (state.isFavorite) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant // Красное сердце
                             )
                         }
                     }
                 }
             )
+        },
+        // ПЛАВАЮЩАЯ КНОПКА ТЕСТА ВНИЗУ
+        bottomBar = {
+            if (!state.isLoading && !state.isEditing && state.lecture?.hasTest == true) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Brush.verticalGradient(listOf(Color.Transparent, MaterialTheme.colorScheme.background)))
+                        .padding(24.dp)
+                ) {
+                    Button(
+                        onClick = { onNavigateToTest(state.lecture!!.id) },
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        ),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Text("Пройти тест по лекции", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Icon(Icons.Default.CheckCircle, contentDescription = null)
+                    }
+                }
+            }
         }
     ) { padding ->
         Box(modifier = Modifier.padding(padding).fillMaxSize()) {
             if (state.isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = MaterialTheme.colorScheme.primary)
             } else {
-                if (state.isEditing) {
-                    // РЕДАКТИРОВАНИЕ
+                state.lecture?.let { lecture ->
+                    val contentToDisplay = remember(lecture.content, searchQuery) { simpleHighlight(lecture.content, searchQuery) }
+
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(16.dp)
-                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = 24.dp)
+                            .verticalScroll(scrollState)
                     ) {
-                        OutlinedTextField(
-                            value = state.editedTitle,
-                            onValueChange = { viewModel.setEvent(LectureContract.Event.OnTitleChanged(it)) },
-                            label = { Text("Заголовок") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
                         Spacer(modifier = Modifier.height(16.dp))
-                        OutlinedTextField(
-                            value = state.editedContent,
-                            onValueChange = { viewModel.setEvent(LectureContract.Event.OnContentChanged(it)) },
-                            label = { Text("Содержание (Markdown)") },
-                            modifier = Modifier.fillMaxWidth().height(400.dp),
-                            textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Start)
+                        Text(text = lecture.title, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface, lineHeight = 34.sp)
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        // Отрисовка Markdown (нужно, чтобы библиотека поддерживала цвет)
+                        MarkdownText(
+                            markdown = contentToDisplay,
+                            style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 26.sp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Spacer(modifier = Modifier.height(100.dp))
-                    }
-                } else {
-                    // ПРОСМОТР
-                    state.lecture?.let { lecture ->
+                        Spacer(modifier = Modifier.height(32.dp))
 
-                        // Простая подсветка (код `...`)
-                        val contentToDisplay = remember(lecture.content, searchQuery) {
-                            simpleHighlight(lecture.content, searchQuery)
-                        }
-
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 16.dp)
-                                .verticalScroll(scrollState)
-                        ) {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(text = lecture.title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            MarkdownText(
-                                markdown = contentToDisplay,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(modifier = Modifier.height(24.dp))
-
-                            // --- СПИСОК ФАЙЛОВ (ВИДЕН ВСЕМ) ---
-                            if (lecture.files.isNotEmpty()) {
-                                Text(
-                                    text = "Материалы к лекции:",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                lecture.files.forEach { file ->
-                                    Card(
-                                        onClick = { viewModel.setEvent(LectureContract.Event.OnFileClicked(file.url)) },
-                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.padding(12.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Icon(Icons.Default.Description, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                                            Spacer(modifier = Modifier.width(12.dp))
-                                            Text(text = file.title, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-                                            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        }
-                                    }
-                                }
-                                Spacer(modifier = Modifier.height(24.dp))
-                            }
-                            // ----------------------------------
-
-                            if (lecture.hasTest && !state.isEditing) {
-                                Button(
-                                    onClick = { onNavigateToTest(lecture.id) },
-                                    modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)
+                        // ФАЙЛЫ
+                        if (lecture.files.isNotEmpty()) {
+                            Text("Дополнительные материалы", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(bottom = 12.dp))
+                            lecture.files.forEach { file ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(MaterialTheme.colorScheme.surface)
+                                        .clickable { viewModel.setEvent(LectureContract.Event.OnFileClicked(file.url)) }
+                                        .padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Icon(Icons.Default.Check, contentDescription = null)
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Пройти тест по лекции")
+                                    Box(modifier = Modifier.size(40.dp).background(MaterialTheme.colorScheme.primary.copy(0.1f), RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
+                                        Icon(Icons.Default.Description, null, tint = MaterialTheme.colorScheme.primary)
+                                    }
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Text(file.title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+                                    Icon(Icons.Default.Download, null, tint = MaterialTheme.colorScheme.outlineVariant)
                                 }
-                                Spacer(modifier = Modifier.height(48.dp))
+                                Spacer(modifier = Modifier.height(8.dp))
                             }
                         }
+
+                        // Отступ под нижнюю кнопку
+                        Spacer(modifier = Modifier.height(120.dp))
                     }
                 }
             }
@@ -281,12 +259,10 @@ private fun simpleHighlight(markdown: String, query: String?): String {
     return markdown.replace(Regex(escapedQuery, RegexOption.IGNORE_CASE), "`$0`")
 }
 
-private fun readBytesFromUri(context: Context, uri: Uri): ByteArray? {
-    return try {
-        context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-    } catch (e: Exception) { e.printStackTrace(); null }
+private fun readBytesFromUri(context: android.content.Context, uri: android.net.Uri): ByteArray? {
+    return try { context.contentResolver.openInputStream(uri)?.use { it.readBytes() } } catch (e: Exception) { null }
 }
 
-private fun getFileName(context: Context, uri: Uri): String? {
+private fun getFileName(context: android.content.Context, uri: android.net.Uri): String? {
     return uri.lastPathSegment?.substringAfterLast("/") ?: "File"
 }

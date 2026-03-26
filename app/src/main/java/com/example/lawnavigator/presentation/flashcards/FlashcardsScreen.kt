@@ -3,8 +3,11 @@ package com.example.lawnavigator.presentation.flashcards
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
@@ -12,11 +15,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.flow.collectLatest
 
@@ -35,9 +41,11 @@ fun FlashcardsScreen(
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = { Text("Повторение") },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 navigationIcon = {
                     IconButton(onClick = { viewModel.setEvent(FlashcardsContract.Event.OnBackClicked) }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
@@ -54,7 +62,7 @@ fun FlashcardsScreen(
             contentAlignment = Alignment.Center
         ) {
             when {
-                state.isLoading -> CircularProgressIndicator()
+                state.isLoading -> CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
 
                 state.error != null -> {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -69,21 +77,19 @@ fun FlashcardsScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(64.dp))
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Все карточки на сегодня пройдены!", style = MaterialTheme.typography.titleLarge)
+                        Text("Все карточки на сегодня пройдены!", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
                         Spacer(modifier = Modifier.height(24.dp))
-                        Button(onClick = onNavigateBack) {
-                            Text("Вернуться")
+                        Button(onClick = onNavigateBack, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
+                            Text("Вернуться", color = MaterialTheme.colorScheme.onPrimaryContainer)
                         }
                     }
                 }
 
-                // Логика отображения карточек
                 state.currentCard != null -> {
                     Column(
                         modifier = Modifier.fillMaxSize(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // Прогресс бар
                         LinearProgressIndicator(
                             progress = { state.progress },
                             modifier = Modifier.fillMaxWidth().height(8.dp),
@@ -92,13 +98,10 @@ fun FlashcardsScreen(
                         )
                         Spacer(modifier = Modifier.height(24.dp))
 
-                        // --- АНИМИРОВАННЫЙ КОНТЕЙНЕР ---
                         AnimatedContent(
                             targetState = state.currentCard,
                             transitionSpec = {
-                                // Новая карточка выезжает справа (+FadeIn)
                                 (slideInHorizontally { width -> width } + fadeIn()).togetherWith(
-                                    // Старая уезжает влево (+FadeOut)
                                     slideOutHorizontally { width -> -width } + fadeOut()
                                 )
                             },
@@ -107,16 +110,9 @@ fun FlashcardsScreen(
                                 .weight(1f)
                                 .fillMaxWidth()
                         ) { targetCard ->
-                            // Важно: мы используем targetCard (аргумент лямбды), а не state.currentCard.
-                            // Это позволяет AnimatedContent держать на экране "старую" карточку во время анимации.
                             if (targetCard != null) {
                                 FlipCard(
                                     card = targetCard,
-                                    // Если это ТЕКУЩАЯ карточка в стейте, берем стейт isFlipped.
-                                    // Если это СТАРАЯ (улетающая) карточка, она должна оставаться перевернутой (true),
-                                    // чтобы пользователь не видел, как она "захлопывается" в полете.
-                                    // Но так как ViewModel сбрасывает isFlipped сразу, нам нужно небольшое условие.
-                                    // Впрочем, для простоты: новая карточка всегда false, старая — визуально исчезает.
                                     isFlipped = if (targetCard.id == state.currentCard?.id) state.isFlipped else false,
                                     onFlip = { viewModel.setEvent(FlashcardsContract.Event.OnCardFlip) },
                                     modifier = Modifier.fillMaxSize()
@@ -126,37 +122,41 @@ fun FlashcardsScreen(
 
                         Spacer(modifier = Modifier.height(24.dp))
 
-                        // КНОПКИ ОЦЕНКИ (Показываем только если перевернуто)
-                        // Анимируем появление кнопок (фейд)
                         AnimatedVisibility(
                             visible = state.isFlipped,
                             enter = fadeIn() + expandVertically(),
                             exit = fadeOut() + shrinkVertically()
                         ) {
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceEvenly
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Button(
                                     onClick = { viewModel.setEvent(FlashcardsContract.Event.OnRate(0)) },
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE57373))
-                                ) { Text("Забыл") }
+                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.2f)),
+                                    modifier = Modifier.weight(1f).padding(end = 8.dp).height(56.dp),
+                                    shape = RoundedCornerShape(16.dp)
+                                ) { Text("Забыл", color = MaterialTheme.colorScheme.tertiary, fontWeight = FontWeight.Bold) }
 
                                 Button(
                                     onClick = { viewModel.setEvent(FlashcardsContract.Event.OnRate(3)) },
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFF176))
-                                ) { Text("Норм", color = Color.Black) }
+                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.2f)),
+                                    modifier = Modifier.weight(1f).padding(horizontal = 4.dp).height(56.dp),
+                                    shape = RoundedCornerShape(16.dp)
+                                ) { Text("Норм", color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold) }
 
                                 Button(
                                     onClick = { viewModel.setEvent(FlashcardsContract.Event.OnRate(5)) },
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF81C784))
-                                ) { Text("Легко") }
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50).copy(alpha = 0.2f)),
+                                    modifier = Modifier.weight(1f).padding(start = 8.dp).height(56.dp),
+                                    shape = RoundedCornerShape(16.dp)
+                                ) { Text("Легко", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold) }
                             }
                         }
 
                         if (!state.isFlipped) {
-                            Text("Нажмите на карточку, чтобы проверить себя", color = Color.Gray)
-                            Spacer(modifier = Modifier.height(48.dp)) // Место под кнопки, чтобы контент не прыгал
+                            Text("Нажмите на карточку, чтобы проверить себя", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(modifier = Modifier.height(48.dp))
                         }
                     }
                 }
@@ -181,74 +181,76 @@ fun FlipCard(
         modifier = modifier
             .graphicsLayer {
                 rotationY = rotation
-                cameraDistance = 12f * density
+                cameraDistance = 16f * density
             }
             .clickable(onClick = onFlip),
         contentAlignment = Alignment.Center
     ) {
         if (rotation <= 90f) {
             // FRONT
-            Card(
-                modifier = Modifier.fillMaxSize(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                elevation = CardDefaults.cardElevation(4.dp)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(Brush.linearGradient(listOf(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.surface)))
+                    .border(1.dp, Color.Gray.copy(alpha = 0.1f), RoundedCornerShape(24.dp))
+                    .padding(32.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-                    Text(
-                        text = card.question,
-                        style = MaterialTheme.typography.headlineSmall,
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
+                Text(
+                    text = card.question,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    lineHeight = 36.sp
+                )
             }
         } else {
             // BACK
-            Card(
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .graphicsLayer { rotationY = 180f },
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(4.dp)
+                    .graphicsLayer { rotationY = 180f }
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f))
+                    .border(2.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), RoundedCornerShape(24.dp))
+                    .padding(32.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-                    Column {
-                        Text(
-                            text = card.question,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = Color.Gray,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        HorizontalDivider()
-                        Spacer(modifier = Modifier.height(16.dp))
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = card.question,
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)
+                    )
 
-                        Text(
-                            text = "Правильный ответ:",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Правильный ответ",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 1.sp,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
 
-                        val correctOptions = card.options.filter { it.isCorrect }
+                    val correctOptions = card.options.filter { it.isCorrect }
 
-                        if (correctOptions.isNotEmpty()) {
-                            correctOptions.forEach { option ->
-                                Text(
-                                    text = option.text,
-                                    color = Color(0xFF2E7D32),
-                                    fontWeight = FontWeight.Bold,
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 4.dp)
-                                )
-                            }
-                        } else {
-                            Text("Ответ не указан", color = Color.Red)
+                    if (correctOptions.isNotEmpty()) {
+                        correctOptions.forEach { option ->
+                            Text(
+                                text = option.text,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.headlineSmall,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
                         }
+                    } else {
+                        Text("Ответ не указан", color = MaterialTheme.colorScheme.tertiary)
                     }
                 }
             }

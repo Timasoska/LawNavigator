@@ -1,7 +1,8 @@
 package com.example.lawnavigator.data.repository
 
 import com.example.lawnavigator.data.api.AuthApi
-import com.example.lawnavigator.data.dto.AuthRequestDto
+import com.example.lawnavigator.data.dto.LoginRequestDto
+import com.example.lawnavigator.data.dto.RegisterRequestDto
 import com.example.lawnavigator.data.local.TokenManager
 import com.example.lawnavigator.domain.repository.AuthRepository
 import retrofit2.HttpException
@@ -23,6 +24,29 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun login(email: String, password: String): Result<Unit> {
         return try {
+            val response = api.login(LoginRequestDto(email, password))
+            tokenManager.saveAuthData(response.token, response.role, response.name)
+            Result.success(Unit)
+        } catch (e: Exception) { Result.failure(e) }
+    }
+
+    override suspend fun register(email: String, password: String, name: String, inviteCode: String?): Result<Unit> {
+        return try {
+            val response = api.register(RegisterRequestDto(email, password, name, inviteCode))
+            tokenManager.saveAuthData(response.token, response.role, response.name)
+            Result.success(Unit)
+        } catch (e: Exception) { Result.failure(e) }
+    }
+}
+
+/*
+class AuthRepositoryImpl @Inject constructor(
+    private val api: AuthApi,
+    private val tokenManager: TokenManager
+) : AuthRepository {
+
+    override suspend fun login(email: String, password: String): Result<Unit> {
+        return try {
             val response = api.login(AuthRequestDto(email, password))
             // Сохраняем token, role И name
             tokenManager.saveAuthData(response.token, response.role, response.name)
@@ -37,4 +61,4 @@ class AuthRepositoryImpl @Inject constructor(
             Result.success(Unit)
         } catch (e: Exception) { Result.failure(e) }
     }
-}
+}*/

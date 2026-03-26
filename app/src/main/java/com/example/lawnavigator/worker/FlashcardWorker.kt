@@ -20,7 +20,6 @@ class FlashcardWorker(
     private val repository: ContentRepository
 ) : CoroutineWorker(appContext, workerParams) {
 
-    // ... (остальной код метода doWork и sendNotification остается без изменений) ...
     override suspend fun doWork(): Result {
         return try {
             val result = repository.getDueFlashcards()
