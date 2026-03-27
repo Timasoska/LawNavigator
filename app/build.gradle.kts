@@ -52,6 +52,12 @@ android {
 }
 
 dependencies {
+
+    testImplementation(libs.junit)
+    testImplementation(libs.mockk) // <--- MockK для имитации UseCase
+    testImplementation(libs.kotlinx.coroutines.test) // <--- Для тестирования ViewModel
+    // Для тестирования LiveData/StateFlow
+    testImplementation(libs.androidx.core.testing)
     implementation(libs.androidx.work.runtime.ktx.v290)
 
     // Coil (Загрузка изображений)
