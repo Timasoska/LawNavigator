@@ -53,6 +53,10 @@ android {
 
 dependencies {
 
+    implementation(libs.androidx.compose.ui.test.junit4)
+    androidTestImplementation(libs.androidx.ui.test.junit4)
+    debugImplementation(libs.androidx.ui.test.manifest)
+
     testImplementation(libs.junit)
     testImplementation(libs.mockk) // <--- MockK для имитации UseCase
     testImplementation(libs.kotlinx.coroutines.test) // <--- Для тестирования ViewModel
