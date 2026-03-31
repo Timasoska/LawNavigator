@@ -77,12 +77,12 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = if (state.isRegisterMode) "Создание аккаунта" else "С возвращением, Юрист",
+                text = if (state.isRegisterMode) "Создание аккаунта" else "С возвращением",
                 style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface)
             )
 
             Text(
-                text = "Ваш путь к адвокатуре продолжается здесь.",
+                text = "Ваш путь продолжается здесь.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 8.dp, bottom = 40.dp)

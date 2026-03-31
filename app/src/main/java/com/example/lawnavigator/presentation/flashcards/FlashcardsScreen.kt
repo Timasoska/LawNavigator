@@ -143,7 +143,7 @@ fun FlashcardsScreen(
                                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.2f)),
                                     modifier = Modifier.weight(1f).padding(horizontal = 4.dp).height(56.dp),
                                     shape = RoundedCornerShape(16.dp)
-                                ) { Text("Норм", color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold) }
+                                ) { Text("Средне", color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold) }
 
                                 Button(
                                     onClick = { viewModel.setEvent(FlashcardsContract.Event.OnRate(5)) },
