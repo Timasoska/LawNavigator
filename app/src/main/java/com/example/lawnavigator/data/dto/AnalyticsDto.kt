@@ -34,7 +34,9 @@ data class TopicStatDto(
     val topicName: String,
     val averageScore: Double,
     val attemptsCount: Int,
-    val lastScore: Int?
+    val lastScore: Int?,
+    val lectures: List<LectureStatDto> = emptyList() // <--- Добавлено
+
 )
 
 /**
@@ -48,5 +50,12 @@ data class StudentDetailedReportDto(
     val overallTrend: Double,
     val topics: List<TopicStatDto>,
     val attemptHistory: List<Int>
+)
+
+@Serializable
+data class LectureStatDto(
+    val lectureId: Int,
+    val title: String,
+    val score: Int?
 )
 

@@ -23,7 +23,16 @@ class ContentRepositoryImpl @Inject constructor(
         val token = tokenManager.token.first() ?: throw Exception("No token")
         val dtos = api.getDisciplineDetails("Bearer $token", disciplineId)
         println("📊 [ANALYTICS] Received ${dtos.size} topic stats for discipline $disciplineId")
-        Result.success(dtos.map { TopicStat(it.topicId, it.topicName, it.averageScore, it.attemptsCount, it.lastScore) })
+        Result.success(dtos.map {
+            TopicStat(
+                it.topicId,
+                it.topicName,
+                it.averageScore,
+                it.attemptsCount,
+                it.lastScore,
+                it.lectures.map { l -> LectureStat(l.lectureId, l.title, l.score) } // <--- Маппинг лекций
+            )
+        })
     } catch (e: Exception) {
         Result.failure(e)
     }
@@ -493,7 +502,14 @@ class ContentRepositoryImpl @Inject constructor(
                 trend = dto.overallTrend,
                 history = dto.attemptHistory,
                 topicStats = dto.topics.map {
-                    TopicStat(it.topicId, it.topicName, it.averageScore, it.attemptsCount, it.lastScore)
+                    TopicStat(
+                        it.topicId,
+                        it.topicName,
+                        it.averageScore,
+                        it.attemptsCount,
+                        it.lastScore,
+                        it.lectures.map { l -> LectureStat(l.lectureId, l.title, l.score) } // <--- Маппинг лекций
+                    )
                 }
             )
         )

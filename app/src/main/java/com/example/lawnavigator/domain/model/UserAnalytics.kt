@@ -27,7 +27,8 @@ data class TopicStat(
     val name: String,
     val averageScore: Double,
     val attemptsCount: Int,
-    val lastScore: Int?
+    val lastScore: Int?,
+    val lectures: List<LectureStat> = emptyList() // <--- Добавлено
 )
 
 data class StudentDetailedReport(
@@ -37,3 +38,10 @@ data class StudentDetailedReport(
     val topicStats: List<TopicStat>,
     val history: List<Int>
 )
+
+data class LectureStat(
+    val lectureId: Int,
+    val title: String,
+    val score: Int?
+)
+
