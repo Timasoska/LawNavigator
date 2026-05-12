@@ -76,12 +76,16 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FolderSpecial
 import androidx.compose.material3.*
+import androidx.compose.runtime.DisposableEffect
 
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -94,6 +98,20 @@ fun TopicsScreen(
     onNavigateToCreateTest: (Int) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
+
+    // --- АВТО-ОБНОВЛЕНИЕ ПРИ ВОЗВРАТЕ ---
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.setEvent(TopicsContract.Event.OnRetryClicked) // В TopicsContract это событие обновления
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     LaunchedEffect(true) {
         viewModel.effect.collectLatest { effect ->

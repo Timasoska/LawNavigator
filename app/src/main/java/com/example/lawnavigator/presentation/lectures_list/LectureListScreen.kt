@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -37,7 +38,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.lawnavigator.presentation.components.CommonPullToRefreshBox
 import com.example.lawnavigator.presentation.theme.*
 import kotlinx.coroutines.flow.collectLatest
-
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LecturesListScreen(
@@ -49,6 +52,22 @@ fun LecturesListScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+
+    // --- НОВЫЙ БЛОК: АВТО-ОБНОВЛЕНИЕ ПРИ ВОЗВРАТЕ ---
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                // Экран снова стал видимым (например, вернулись из теста)
+                // Отправляем команду на фоновое обновление данных
+                viewModel.setEvent(LecturesListContract.Event.OnRefresh)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {

@@ -40,6 +40,9 @@ import androidx.compose.material.icons.filled.QueryStats
 import androidx.compose.material.icons.filled.SettingsBrightness
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.lawnavigator.presentation.components.UserAvatar
 import com.example.lawnavigator.presentation.theme.*
 
@@ -55,6 +58,20 @@ fun ProfileScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+
+    // --- АВТО-ОБНОВЛЕНИЕ ПРИ ВОЗВРАТЕ ---
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.setEvent(ProfileContract.Event.OnRefresh)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     var isSimulationMode by remember { mutableStateOf(false) }
     var simulatedScore by remember { mutableFloatStateOf(80f) }
@@ -274,7 +291,7 @@ fun ProfileScreen(
                                 // ----------------------------------
                             }
                             Column(horizontalAlignment = Alignment.End) {
-                                Text("Тренд (МНК)", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, modifier = Modifier.padding(bottom = 4.dp))
+                                Text("Тренд", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, modifier = Modifier.padding(bottom = 4.dp))
                                 MiniTrendIndicator(trend = displayTrend)
                             }
                         }
