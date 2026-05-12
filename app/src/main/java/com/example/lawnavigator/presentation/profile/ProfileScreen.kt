@@ -19,8 +19,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.lawnavigator.presentation.components.CommonPullToRefreshBox
 import com.example.lawnavigator.presentation.components.MiniTrendIndicator
 import com.example.lawnavigator.presentation.components.ScoreChart
-import com.example.lawnavigator.presentation.components.ThemeOption
-import com.example.lawnavigator.presentation.components.TrendIndicator
 import com.example.lawnavigator.presentation.theme.ThemeMode
 import com.example.lawnavigator.presentation.utils.calculateTrendLocal
 import kotlinx.coroutines.flow.collectLatest
